@@ -1,0 +1,71 @@
+name: Nueva fuente
+description: Una nota, video, publicación o documento que cubre un hecho que ya está en la cronología.
+title: "[fuente] "
+labels: ["fuente"]
+body:
+  - type: input
+    id: event
+    attributes:
+      label: Entrada
+      description: Id de la entrada (está en data/events.csv) o, si no lo encontrás, la fecha y el título que se ve en la página.
+      placeholder: 2026-11-03-bcp-inicia-resolucion-ueno-bank
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Enlace
+      description: El enlace original. Abrilo antes de enviarlo y confirmá que habla de este hecho.
+      placeholder: https://
+    validations:
+      required: true
+  - type: input
+    id: outlet
+    attributes:
+      label: Medio o emisor
+      placeholder: "Última Hora, SNT (YouTube), BCP · comunicado"
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Tipo
+      options:
+        - article (nota)
+        - video
+        - social (publicación en redes)
+        - document (documento oficial o comunicado)
+    validations:
+      required: true
+  - type: input
+    id: headline
+    attributes:
+      label: Titular
+      description: Copiá el titular tal como fue publicado.
+  - type: textarea
+    id: lede
+    attributes:
+      label: Copete (opcional)
+      description: El primer párrafo destacado bajo el titular, copiado tal cual. No pegues el cuerpo de la nota.
+  - type: input
+    id: published
+    attributes:
+      label: Fecha de publicación
+      placeholder: AAAA-MM-DD
+  - type: input
+    id: archive
+    attributes:
+      label: Copia archivada (opcional)
+      description: Enlace de web.archive.org o archive.today.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notas
+      description: Si contradice otra fuente, si el titular cambió, si requiere suscripción.
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Confirmación
+      options:
+        - label: Abrí el enlace y respalda lo que dice la entrada.
+          required: true

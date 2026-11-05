@@ -1,0 +1,429 @@
+{
+  "profile": "tabular-data-package",
+  "name": "caso-ueno",
+  "title": "El caso ueno: cronología pública del caso ueno bank",
+  "description": "Entradas fechadas y fuentes públicas (notas, videos, publicaciones en redes y documentos oficiales) sobre ueno bank, el Banco Central del Paraguay y el Gobierno, desde 2019 hasta la resolución del banco el 3 de noviembre de 2026. Cada entrada resume lo que dijeron las fuentes citadas; no contiene conclusiones propias.",
+  "language": "es",
+  "keywords": [
+    "Paraguay",
+    "ueno bank",
+    "BCP",
+    "cronología",
+    "periodismo de datos"
+  ],
+  "licenses": [
+    {
+      "name": "CC-BY-4.0",
+      "title": "Creative Commons Attribution 4.0 (excepto los campos headline y lede, ver data/LICENSE.md)",
+      "path": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  ],
+  "resources": [
+    {
+      "name": "events",
+      "path": "events.csv",
+      "profile": "tabular-data-resource",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "description": "Una fila por hecho de la cronología.",
+      "schema": {
+        "primaryKey": "id",
+        "foreignKeys": [
+          {
+            "fields": "thread",
+            "reference": {
+              "resource": "threads",
+              "fields": "id"
+            }
+          }
+        ],
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "description": "Identificador estable: fecha del hecho + título corto en minúsculas con guiones. No se cambia una vez publicado.",
+            "constraints": {
+              "required": true,
+              "unique": true,
+              "pattern": "^\\d{4}(-\\d{2}){0,2}-[a-z0-9]+(-[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "date",
+            "type": "string",
+            "description": "Fecha del hecho (no de la publicación): AAAA-MM-DD, AAAA-MM o AAAA según la precisión conocida.",
+            "constraints": {
+              "required": true,
+              "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$"
+            }
+          },
+          {
+            "name": "order",
+            "type": "integer",
+            "description": "Desempate opcional entre entradas de la misma fecha (1, 2, 3…).",
+            "constraints": {
+              "minimum": 0
+            }
+          },
+          {
+            "name": "thread",
+            "type": "string",
+            "description": "Hilo principal; id de threads.csv.",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "topics",
+            "type": "string",
+            "description": "Ids de topics.csv separados por punto y coma."
+          },
+          {
+            "name": "milestone",
+            "type": "boolean",
+            "description": "true si es un hito de la historia.",
+            "trueValues": [
+              "true"
+            ],
+            "falseValues": [
+              "false"
+            ],
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "description": "Descripción interna y breve del hecho, para búsqueda y para contribuidores. No se publica en la página.",
+            "constraints": {
+              "required": true,
+              "maxLength": 120
+            }
+          },
+          {
+            "name": "summary",
+            "type": "string",
+            "description": "Descripción interna del hecho, con atribución (“Según…”). No se publica en la página.",
+            "constraints": {
+              "required": true,
+              "maxLength": 700
+            }
+          },
+          {
+            "name": "note",
+            "type": "string",
+            "description": "Nota interna: discrepancias entre fuentes o fechas inciertas. No se publica en la página.",
+            "constraints": {
+              "maxLength": 300
+            }
+          },
+          {
+            "name": "revealed",
+            "type": "date",
+            "description": "Si el hecho se conoció después, fecha de la publicación que lo reveló."
+          },
+          {
+            "name": "chart",
+            "type": "string",
+            "description": "Id de una serie para graficar dentro de la entrada (hoy solo “deposits”)."
+          }
+        ]
+      }
+    },
+    {
+      "name": "sources",
+      "path": "sources.csv",
+      "profile": "tabular-data-resource",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "description": "Una fila por fuente que respalda una entrada. Una misma URL puede respaldar varias entradas.",
+      "schema": {
+        "primaryKey": [
+          "event_id",
+          "url"
+        ],
+        "foreignKeys": [
+          {
+            "fields": "event_id",
+            "reference": {
+              "resource": "events",
+              "fields": "id"
+            }
+          }
+        ],
+        "fields": [
+          {
+            "name": "event_id",
+            "type": "string",
+            "description": "Id de la entrada en events.csv.",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "url",
+            "type": "string",
+            "format": "uri",
+            "description": "Enlace original, sin parámetros de rastreo.",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "outlet",
+            "type": "string",
+            "description": "Medio o emisor (p. ej. “ABC Color”, “BCP · comunicado”, “ABC TV (YouTube)”).",
+            "constraints": {
+              "required": true,
+              "maxLength": 80
+            }
+          },
+          {
+            "name": "type",
+            "type": "string",
+            "description": "Tipo de fuente.",
+            "constraints": {
+              "required": true,
+              "enum": [
+                "article",
+                "social",
+                "video",
+                "document"
+              ]
+            }
+          },
+          {
+            "name": "headline",
+            "type": "string",
+            "description": "Titular tal como fue publicado. Es lo único que la página muestra de cada fuente, junto al medio y la fecha. Texto del medio: no está cubierto por CC BY 4.0 (ver data/LICENSE.md).",
+            "constraints": {
+              "required": true,
+              "maxLength": 300
+            }
+          },
+          {
+            "name": "lede",
+            "type": "string",
+            "description": "Copete o fragmento inicial literal, si existe, hasta 25 palabras y 500 caracteres. Los fragmentos terminan en … y no incluyen párrafos del cuerpo. Una URL repetida en varias entradas guarda el copete una sola vez. La página lo muestra dentro del diario; si está vacío, muestra líneas decorativas. Texto del medio: no está cubierto por CC BY 4.0 (ver data/LICENSE.md).",
+            "constraints": {
+              "maxLength": 500
+            }
+          },
+          {
+            "name": "published",
+            "type": "date",
+            "description": "Fecha de publicación de la fuente (AAAA-MM-DD)."
+          },
+          {
+            "name": "archive_url",
+            "type": "string",
+            "format": "uri",
+            "description": "Copia archivada (Wayback Machine, archive.today) para cuando el original desaparezca."
+          },
+          {
+            "name": "last_checked",
+            "type": "date",
+            "description": "Última fecha en que alguien abrió el enlace y confirmó que respalda la entrada."
+          },
+          {
+            "name": "notes",
+            "type": "string",
+            "description": "Notas sobre la fuente: titular cambiado, acceso restringido, contradicciones."
+          }
+        ]
+      }
+    },
+    {
+      "name": "threads",
+      "path": "threads.csv",
+      "profile": "tabular-data-resource",
+      "description": "Hilos (actor principal) para colorear y filtrar la cronología.",
+      "schema": {
+        "primaryKey": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "constraints": {
+              "required": true,
+              "unique": true
+            }
+          },
+          {
+            "name": "label",
+            "type": "string",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "description",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "topics",
+      "path": "topics.csv",
+      "profile": "tabular-data-resource",
+      "description": "Temas que agrupan entradas sobre el mismo asunto a lo largo del tiempo.",
+      "schema": {
+        "primaryKey": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "constraints": {
+              "required": true,
+              "unique": true
+            }
+          },
+          {
+            "name": "label",
+            "type": "string",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "description",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "people",
+      "path": "people.csv",
+      "profile": "tabular-data-resource",
+      "description": "Personas que nombran las publicaciones, con las formas en que las escriben los medios. Sirve para la búsqueda de la página; que alguien figure aquí no indica su papel en los hechos.",
+      "schema": {
+        "primaryKey": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "description": "Identificador: minúsculas, números y guiones.",
+            "constraints": {
+              "required": true,
+              "unique": true,
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "description": "Nombre que muestra la página.",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "aliases",
+            "type": "string",
+            "description": "Otras formas en que aparece el nombre (apodos, apellidos solos, variantes de grafía), separadas por ';'."
+          }
+        ]
+      }
+    },
+    {
+      "name": "mentions",
+      "path": "mentions.csv",
+      "profile": "tabular-data-resource",
+      "description": "Qué personas nombra cada publicación y dónde: titular, copete o texto. Una fila por publicación y persona.",
+      "schema": {
+        "primaryKey": [
+          "url",
+          "person"
+        ],
+        "foreignKeys": [
+          {
+            "fields": "person",
+            "reference": {
+              "resource": "people",
+              "fields": "id"
+            }
+          }
+        ],
+        "fields": [
+          {
+            "name": "url",
+            "type": "string",
+            "format": "uri",
+            "description": "Publicación: una url de sources.csv.",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "person",
+            "type": "string",
+            "description": "Id de people.csv.",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "forms",
+            "type": "string",
+            "description": "El nombre tal como aparece en la publicación, separado por ';' si aparece de varias formas.",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "where",
+            "type": "string",
+            "description": "Dónde aparece: headline, lede y/o body, separados por ';'.",
+            "constraints": {
+              "required": true,
+              "pattern": "^(headline|lede|body)(;(headline|lede|body))*$"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "deposits",
+      "path": "series/deposits.csv",
+      "profile": "tabular-data-resource",
+      "description": "Depósitos a la vista de entidades del Estado (sin IPS) en ueno, según ABC Color con documentos del MEF.",
+      "schema": {
+        "primaryKey": "period",
+        "fields": [
+          {
+            "name": "period",
+            "type": "yearmonth",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "constraints": {
+              "required": true
+            }
+          },
+          {
+            "name": "unit",
+            "type": "string"
+          },
+          {
+            "name": "source_url",
+            "type": "string",
+            "format": "uri"
+          },
+          {
+            "name": "note",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+}

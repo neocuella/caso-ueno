@@ -1,0 +1,62 @@
+name: Nueva entrada
+description: Un hecho que todavía no está en la cronología, con al menos una fuente.
+title: "[entrada] "
+labels: ["entrada"]
+body:
+  - type: input
+    id: date
+    attributes:
+      label: Fecha del hecho
+      description: Cuándo ocurrió (no cuándo se publicó). AAAA-MM-DD, o AAAA-MM si no se sabe el día.
+    validations:
+      required: true
+  - type: input
+    id: title
+    attributes:
+      label: Título
+      description: Breve y neutral, hasta 120 caracteres.
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Resumen
+      description: 1 a 3 oraciones con atribución (“Según…”, “X afirmó…”). Sin opiniones propias.
+    validations:
+      required: true
+  - type: dropdown
+    id: thread
+    attributes:
+      label: Hilo
+      options:
+        - banco (ueno y Grupo Vázquez)
+        - gobierno (Gobierno y BCP)
+        - congreso (Congreso y oposición)
+        - fondos (Fondos públicos e IPS)
+        - supervision (Supervisión y crisis)
+    validations:
+      required: true
+  - type: input
+    id: topics
+    attributes:
+      label: Temas (opcional)
+      description: Ids de data/topics.csv separados por punto y coma.
+      placeholder: intervencion;fondos
+  - type: textarea
+    id: sources
+    attributes:
+      label: Fuentes
+      description: Una por línea con enlace, medio, titular y fecha de publicación.
+      placeholder: |
+        https://... | Última Hora | Titular | 2026-11-04
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Confirmación
+      options:
+        - label: Leí las reglas editoriales de CONTRIBUTING.md.
+          required: true
+        - label: Abrí cada enlace y respaldan lo que dice el resumen.
+          required: true

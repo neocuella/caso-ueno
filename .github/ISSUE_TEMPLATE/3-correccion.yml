@@ -1,0 +1,24 @@
+name: Corrección
+description: Un dato incorrecto, un enlace roto o un resumen que no refleja la fuente.
+title: "[corrección] "
+labels: ["corrección"]
+body:
+  - type: input
+    id: event
+    attributes:
+      label: Entrada
+      description: Id de la entrada o fecha y título como aparecen en la página.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qué está mal
+    validations:
+      required: true
+  - type: textarea
+    id: fix
+    attributes:
+      label: Corrección propuesta y fuente que la respalda
+    validations:
+      required: true

@@ -1,0 +1,36 @@
+# Página generada: se construye con `npm run build`
+dist/
+
+# Copias locales de artículos, videos y publicaciones descargadas por scripts/people/
+# (contenido de terceros con derechos de autor: no se publica)
+.cache/
+
+# Dependencias
+node_modules/
+
+# Herramientas locales de desarrollo (asistentes de código, planes de trabajo)
+.claude/
+docs/
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Registros y entornos
+*.log
+npm-debug.log*
+.env
+.env.*
+
+# Herramientas personales de los mantenedores (no hacen falta para contribuir:
+# los datos se editan directamente en data/*.csv)
+scripts/people/
+scripts/migrate/
+scripts/add-source.js
+scripts/lede.js

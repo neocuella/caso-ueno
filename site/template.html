@@ -1,0 +1,1074 @@
+<title>El caso ueno</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,700;0,6..72,800;1,6..72,400;1,6..72,500&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: un puesto de diarios. Cada fuente es un diario sábana doblado; cada hecho, una pila.
+   Escritorio: fila horizontal con snap. Móvil (<900px): columna vertical. Filtros en una píldora fija abajo.
+   Tema único claro a propósito: es papel sobre blanco. */
+:root{
+  --bg:#FFFFFF; --ink:#141413; --ink-2:#2C333D; --muted:#5B6370; --line:#E3E6EA; --link:#1F2933;
+  --t-banco:#B5245A; --t-gobierno:#1B6EC2; --t-congreso:#7E3BB0; --t-fondos:#2F7D32; --t-supervision:#C2550A;
+  --f-serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --f-sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --noise:none; --hito:#C8352A;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{height:100%}
+/* en el celular el cuerpo crece con el contenido: así la línea de tiempo queda pegada arriba durante todo el recorrido */
+body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-sans);-webkit-font-smoothing:antialiased}
+a{color:var(--link)}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+/* ---------- Riel ---------- */
+.rail{display:flex;flex-direction:column;align-items:center;gap:64px;overflow-x:clip;
+  padding-block:40px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.rail > *{flex:none}
+
+/* ---------- Pila ---------- */
+.pile{--fs:min(16px, calc((100vw - 40px) / 34.5));font-size:var(--fs);width:32.5em;max-width:100%;scroll-margin:24px;
+  /* solo se dibujan las pilas cercanas a la pantalla; las demás reservan su tamaño estimado (--est)
+     y, una vez dibujadas, el navegador recuerda su tamaño real ("auto") */
+  content-visibility:auto;contain-intrinsic-size:auto 32.5em auto var(--est,calc(29em + 121px));
+  /* content-visibility recorta el dibujo al borde de la pila: este margen interno deja lugar a las sombras
+     y a las hojas inclinadas, y el margen negativo lo descuenta para que el diseño no cambie */
+  box-sizing:content-box;padding:5em 3em;margin:-5em -3em;scroll-margin:calc(24px - 5em);pointer-events:none}
+.pile > *{pointer-events:auto}
+.stack{position:relative;transform-origin:50% 100%}
+.stack.live{will-change:transform}
+.paper{position:relative;display:block}
+.paper::before{content:"";position:absolute;left:.625em;right:.625em;top:1.5em;bottom:0;border-radius:0 0 1em 1em;
+  box-shadow:0 2.25em 3.125em -.5em rgba(20,20,19,.54),0 .375em .625em -.125em rgba(20,20,19,.28)}
+.back::before{box-shadow:0 1.125em 1.875em -.5em rgba(20,20,19,.22)}
+
+/* hoja trasera: la mitad suelta del diario doblado */
+.sheet-back{position:absolute;left:0;right:-1.625em;top:-1.3125em;bottom:0;filter:drop-shadow(0 -2px 5px rgba(20,20,19,.26)) drop-shadow(1px 1px 2px rgba(20,20,19,.18));pointer-events:none}
+.sheet-back.sm{right:-1em;top:-.5625em}
+.sb-shape{position:absolute;inset:0;overflow:hidden;background:linear-gradient(to right,var(--tint,#F4F1EA) 0%,color-mix(in srgb,var(--tint,#F4F1EA),#000 1%) 60%,color-mix(in srgb,var(--tint,#F4F1EA),#000 3.5%) 100%);
+  clip-path:polygon(2.375em calc(.375em + var(--ly,0em)),2.4em calc(.2125em + var(--ly,0em)),2.469em calc(.094em + var(--ly,0em)),2.588em calc(.025em + var(--ly,0em)),2.75em calc(0em + var(--ly,0em)),
+    15% calc(.12em*var(--sg,1) + var(--ly,0em)*0.85 + var(--ty,0em)*0.15),25% calc(.267em*var(--sg,1) + var(--ly,0em)*0.75 + var(--ty,0em)*0.25),35% calc(.386em*var(--sg,1) + var(--ly,0em)*0.65 + var(--ty,0em)*0.35),45% calc(.478em*var(--sg,1) + var(--ly,0em)*0.55 + var(--ty,0em)*0.45),55% calc(.542em*var(--sg,1) + var(--ly,0em)*0.45 + var(--ty,0em)*0.55),65% calc(.578em*var(--sg,1) + var(--ly,0em)*0.35 + var(--ty,0em)*0.65),75% calc(.586em*var(--sg,1) + var(--ly,0em)*0.25 + var(--ty,0em)*0.75),85% calc(.567em*var(--sg,1) + var(--ly,0em)*0.15 + var(--ty,0em)*0.85),92% calc(.537em*var(--sg,1) + var(--ly,0em)*0.08 + var(--ty,0em)*0.92),
+    calc(100% - 1.3125em - .625em - var(--tx,0em)) calc(.5em + var(--ty,0em)),calc(100% - 1.044em - .625em - var(--tx,0em)) calc(.5375em + var(--ty,0em)),calc(100% - .8625em - .625em - var(--tx,0em)) calc(.656em + var(--ty,0em)),calc(100% - .7625em - .625em - var(--tx,0em)) calc(.85em + var(--ty,0em)),calc(100% - .756em - .625em - var(--tx,0em)) calc(1.119em + var(--ty,0em)),
+    calc(100% - 2em) calc(100% - .375em),2.25em calc(100% - 1.5em))}
+.sm .sb-shape{clip-path:polygon(1.5em calc(.25em + var(--ly,0em)),1.519em calc(.144em + var(--ly,0em)),1.5625em calc(.0625em + var(--ly,0em)),1.644em calc(.019em + var(--ly,0em)),1.75em calc(0em + var(--ly,0em)),
+    15% calc(.073em*var(--sg,1) + var(--ly,0em)*0.85 + var(--ty,0em)*0.15),25% calc(.141em*var(--sg,1) + var(--ly,0em)*0.75 + var(--ty,0em)*0.25),35% calc(.194em*var(--sg,1) + var(--ly,0em)*0.65 + var(--ty,0em)*0.35),45% calc(.232em*var(--sg,1) + var(--ly,0em)*0.55 + var(--ty,0em)*0.45),55% calc(.255em*var(--sg,1) + var(--ly,0em)*0.45 + var(--ty,0em)*0.55),65% calc(.264em*var(--sg,1) + var(--ly,0em)*0.35 + var(--ty,0em)*0.65),75% calc(.258em*var(--sg,1) + var(--ly,0em)*0.25 + var(--ty,0em)*0.75),85% calc(.237em*var(--sg,1) + var(--ly,0em)*0.15 + var(--ty,0em)*0.85),92% calc(.213em*var(--sg,1) + var(--ly,0em)*0.08 + var(--ty,0em)*0.92),
+    calc(100% - .75em - var(--tx,0em)) calc(.1875em + var(--ty,0em)),calc(100% - .594em - var(--tx,0em)) calc(.2125em + var(--ty,0em)),calc(100% - .4875em - var(--tx,0em)) calc(.281em + var(--ty,0em)),calc(100% - .444em - var(--tx,0em)) calc(.394em + var(--ty,0em)),calc(100% - .456em - var(--tx,0em)) calc(.556em + var(--ty,0em)),
+    calc(100% - 1.375em) calc(100% - .3125em),1.375em calc(100% - .875em))}
+
+/* hoja frontal */
+.sheet{position:relative;overflow:hidden;background:linear-gradient(to right,var(--tint,#F4F1EA) 0%,color-mix(in srgb,var(--tint,#F4F1EA),#000 1%) 60%,color-mix(in srgb,var(--tint,#F4F1EA),#000 3.5%) 100%);
+  border:1px solid #E1DED6;border-bottom-color:#CFCBC0;border-radius:0 0 .5625em .5625em;box-shadow:0 -3px 12px -2px rgba(20,20,19,.32),2px -1px 4px -1px rgba(20,20,19,.20)}
+.sheet > *:not(i){position:relative}
+/* Capas del papel SIN modos de fusión (rendimiento): el tinte va en el fondo de la hoja y la textura y el ruido
+   son imágenes negras con transparencia generadas al cargar. Negro con alfa (1 − gris) da el mismo resultado
+   que "multiply" con una textura gris, pero sin obligar a la GPU a mezclar ~2.000 capas en cada cuadro. */
+i.tex,i.nz,i.fold,i.dark{position:absolute;inset:0;pointer-events:none}
+i.tex{background:var(--paper,none) center/cover;opacity:.48}
+i.nz{background-image:var(--noise);background-size:160px 160px;opacity:.14}
+/* respaldo si no se pudo convertir la textura: vuelve la versión con fusión */
+html.blend i.tex{background-image:url(assets/papel.jpg);mix-blend-mode:multiply}
+i.nz.strong{opacity:.36}
+i.dark{background:linear-gradient(to right,rgba(20,20,19,0) 55%,rgba(20,20,19,.07) 100%)}
+i.fold{top:auto;height:4.75em;background:linear-gradient(to bottom,rgba(20,20,19,0) 0%,rgba(20,20,19,.06) 40%,rgba(20,20,19,.17) 75%,rgba(20,20,19,.34) 100%)}
+
+.front .sheet{display:flex;flex-direction:column;gap:.5em;padding:.875em 1.5em 1.625em}
+.dateline{display:flex;justify-content:space-between;gap:1em;align-items:baseline;font-size:.53em;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--ink);padding-bottom:.45em;white-space:nowrap}
+.dateline span{overflow:hidden;text-overflow:ellipsis}
+.mast{font-family:var(--f-serif);font-weight:800;line-height:1;letter-spacing:-.02em;text-align:center;padding:.1em 0 .2em;border-bottom:3px double var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.front .mast{font-size:2.5em}
+.head.none{font-family:var(--f-sans);font-size:.75em;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:.4em 0}
+/* resaltador: el titular del diario en foco se marca con trazos de marcador, uno por renglón,
+   cada uno con su leve inclinación, alto y bordes (al azar, pero fijos para cada titular) */
+.mk{position:relative;z-index:1}
+.stroke{position:absolute;z-index:0;pointer-events:none;mix-blend-mode:multiply;
+  background:linear-gradient(100deg,rgba(255,216,20,.5) 0%,rgba(255,206,0,.66) 12%,rgba(255,210,0,.6) 55%,rgba(255,200,0,.7) 92%,rgba(255,216,20,.45) 100%);
+  transform-origin:0 50%;transform:rotate(var(--r)) skewX(var(--k)) scaleX(0);transition:transform .5s cubic-bezier(.35,.6,.2,1) var(--d)}
+.pile.focus .stroke{transform:rotate(var(--r)) skewX(var(--k)) scaleX(1)}
+.head{font-family:var(--f-serif);font-weight:700;line-height:1.03;letter-spacing:-.02em;text-wrap:balance;padding-top:.15em;overflow-wrap:break-word}
+.body{margin-top:.375em;border-top:1px solid rgba(110,88,50,.24);padding-top:.55em;column-count:2;column-gap:.9em;column-rule:1px solid rgba(110,88,50,.24)}
+.body.lede{font-family:var(--f-serif);font-size:.594em;line-height:1.35;color:#3C4450;column-gap:1.5em;text-align:justify;hyphens:auto;padding-top:.75em}
+.ln{display:block;height:.28em;margin:0 0 .3em;border-radius:1px;background:#8F8A80;opacity:.42;break-inside:avoid}
+
+/* diarios de atrás: solo la cabecera asoma */
+.back{all:unset;position:absolute;display:block;box-sizing:border-box;cursor:pointer;transform:rotate(var(--r));transform-origin:50% 100%;transition:transform .25s ease}
+.back:hover{transform:rotate(var(--r)) translateY(-.4em)}
+.back:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+.back .sheet{height:5.625em;padding:.4em 1.25em 0;box-shadow:0 -3px 10px -2px rgba(20,20,19,.30),2px -1px 3px -1px rgba(20,20,19,.18)}
+.back .dateline{display:none}
+.back .mast{margin-top:0;padding-top:0;border-bottom-width:2px}
+.front{transform:rotate(-.3deg);animation:rise .35s ease}
+.front.flip,.ghost{animation:none}
+.ghost{margin:0;pointer-events:none}
+@keyframes rise{from{transform:rotate(-.3deg) translateY(.6em);opacity:.4}to{transform:rotate(-.3deg);opacity:1}}
+
+/* hito: un clip rojo sujeta el diario de adelante */
+.clip{position:absolute;z-index:3;left:1em;top:-2.5em;width:1.75em;height:5em;transform:rotate(-6deg);pointer-events:none;overflow:visible;
+  filter:drop-shadow(.06em .14em .1em rgba(20,20,19,.38))}
+.clip path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.key .front .dateline{padding-left:1.6em}
+.hito{display:inline-flex;align-items:center;gap:4px;color:var(--hito)}
+.hito svg,.tog svg{width:8px;height:20px;flex:none}
+.tog svg{margin-right:7px;color:var(--hito)}
+.tog[aria-pressed="true"] svg{color:#F08A80}
+
+/* pie de la pila */
+.cap{font-size:16px;margin-top:20px;display:flex;flex-direction:column;gap:6px;padding-inline:4px}
+.cap-meta{display:flex;flex-direction:column;align-items:flex-start;gap:6px;font-size:.6875em;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
+.cap-meta .who{display:flex;align-items:center;gap:7px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none}
+.nav{display:flex;align-items:center;gap:8px;align-self:stretch}
+.nav span{margin-right:auto;letter-spacing:.04em;text-transform:none;font-weight:500}
+.nav button{all:unset;box-sizing:border-box;cursor:pointer;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;border:1.5px solid var(--ink);color:var(--ink);background:#FFFFFF;font-size:17px;line-height:1;transition:background .15s ease,color .15s ease}
+.nav button:hover{background:var(--ink);color:#FFFFFF}
+.nav button:active{transform:scale(.94)}
+.nav button:disabled{border-color:#D5D8DD;color:#B8BDC4;cursor:default;background:#FFFFFF;transform:none}
+.nav button:focus-visible{outline:2px solid var(--ink)}
+.cap-foot{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;font-size:.78em;color:var(--muted)}
+.cap-foot a{font-weight:600;text-decoration:none;color:var(--link)}
+.cap-foot a:hover{text-decoration:underline}
+.ext{display:inline-block;margin-left:.1em;font-size:.95em;line-height:1;text-decoration:none}
+.ext.sm{font-size:.8em;margin-left:.15em}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.cap-foot button{all:unset;cursor:pointer;border-bottom:1px dotted var(--muted)}
+.cap-foot button:hover{color:var(--ink)}
+
+/* portada, años y cierre */
+/* en el celular, portada, años y cierre usan el mismo ancho que los diarios (32,5em de la pila) */
+.rail{--col:min(520px,calc((100vw - 40px) * 32.5 / 34.5))}
+.intro{width:var(--col)}
+.intro .ed{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:3px double var(--ink);padding-bottom:8px;margin-bottom:26px}
+.intro h1{margin:0 0 16px;font-family:var(--f-serif);font-weight:800;font-size:clamp(52px,9vw,84px);line-height:.92;letter-spacing:-.03em;border-bottom:1px solid var(--ink);padding-bottom:14px}
+.intro .lede .by{white-space:nowrap;color:var(--ink);font-style:italic}
+.intro .lede{margin:0 0 16px;font-family:var(--f-serif);font-size:19px;line-height:1.4;color:var(--ink-2);text-wrap:pretty}
+.intro-act{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 20px}
+.social{display:flex;align-items:center;gap:4px;margin-right:-10px}
+.social a{display:grid;place-items:center;width:40px;height:40px;color:var(--ink);transition:background .15s ease}
+.social a:hover{background:#F3F4F6}
+.social a:focus-visible{outline:2px solid var(--ink);outline-offset:0}
+.about-open{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;height:40px;padding:0 16px;border:1.5px solid var(--ink);font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;transition:background .15s ease,color .15s ease}
+.about-open:hover{background:var(--ink);color:#FFFFFF}
+.about-open:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.stats{display:flex;gap:22px;flex-wrap:wrap;font-size:12px;color:var(--muted);border-top:1px solid var(--ink);padding-top:10px}
+.stats b{display:block;font-family:var(--f-serif);font-size:28px;font-weight:700;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+.hint{margin-top:22px;font-size:13px;font-weight:600;color:var(--ink)}
+.hint .h{display:none}
+.hint .v{display:inline}
+.yr,.yrow{display:contents}
+/* año: eje punteado con marca, igual que en escritorio */
+.year{width:var(--col);border-bottom:1px dashed #C4C8CE;scroll-margin:calc(84px + env(safe-area-inset-top,0px)) 24px 24px}
+.yl{position:relative;display:flex;flex-direction:column;gap:6px;padding:0 0 12px;color:var(--ink)}
+.yl::after{content:"";position:absolute;left:0;bottom:-6px;width:1px;height:11px;background:currentColor}
+.year small{display:block;font-family:var(--f-sans);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.year b{font-family:var(--f-serif);font-weight:800;font-size:34px;line-height:1;letter-spacing:-.02em}
+/* diálogo "Sobre este proyecto" */
+.about{box-sizing:border-box;width:min(560px,calc(100% - 32px));max-height:calc(100dvh - 48px);margin:auto;padding:0 28px 16px;border:0;background:var(--bg);color:var(--ink);
+  overflow:auto;overscroll-behavior:contain;box-shadow:0 24px 60px -12px rgba(20,20,19,.35)}
+.about::backdrop{background:rgba(20,20,19,.45)}
+.about[open]{animation:about-in .22s ease}
+.about[open]::backdrop{animation:about-bg .22s ease}
+@keyframes about-in{from{opacity:0;transform:translateY(12px)}}
+@keyframes about-bg{from{opacity:0}}
+.about-head{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 -28px 16px;padding:22px 20px 12px 28px;background:var(--bg);border-bottom:3px double var(--ink)}
+.about h2{margin:0;font-family:var(--f-serif);font-size:28px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.about h3{margin:24px 0 10px;font-family:var(--f-serif);font-size:21px;font-weight:700;letter-spacing:-.01em;border-top:1px solid var(--ink);padding-top:12px}
+.about p{margin:0 0 12px;font-size:15px;line-height:1.55;color:var(--ink-2)}
+.about a{color:var(--link)}
+.about .about-sign{margin:20px 0 4px;padding-top:12px;border-top:3px double var(--ink);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.about .about-sign b{color:var(--ink)}
+.about .about-lede{margin-bottom:16px;font-family:var(--f-serif);font-size:17px;line-height:1.45;color:var(--ink-2);text-wrap:pretty}
+.about-x{all:unset;flex:none;width:40px;height:40px;display:grid;place-items:center;font-size:24px;line-height:1;cursor:pointer}
+.about-x:focus-visible{outline:2px solid var(--ink)}
+html:has(.about[open]){overflow:hidden}
+.empty{width:var(--col);font-family:var(--f-serif);font-size:20px;color:var(--muted)}
+.empty button{all:unset;cursor:pointer;font-family:var(--f-sans);font-size:14px;font-weight:600;color:var(--ink);border-bottom:1px solid}
+
+/* ---------- Barra de filtros: abajo, de borde a borde, como la línea de tiempo arriba.
+   En el celular muestra un botón "Filtrar" y el conteo; los filtros se abren en un cajón desde abajo.
+   (sin backdrop-filter ni transform en la barra: el cajón es position:fixed y debe ubicarse respecto de la pantalla) */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;align-items:center;gap:10px;
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  background:#FFFFFF;border-top:1px solid #E6E8EB}
+.srch{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;background:#F3F4F6;color:var(--muted)}
+.srch input{all:unset;flex:1;min-width:0;font-size:15px;color:var(--ink)}
+.srch input::placeholder{color:#7A828E}
+.filters select{appearance:none;-webkit-appearance:none;height:40px;padding:0 32px 0 12px;border:0;border-radius:0;background:#F3F4F6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235B6370' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;font-size:15px;cursor:pointer;min-width:0}
+.tog{all:unset;box-sizing:border-box;flex:none;height:40px;padding:0 14px;white-space:nowrap;background:#F3F4F6;font-size:15px;cursor:pointer;display:flex;align-items:center}
+.tog[aria-pressed="true"]{background:var(--ink);color:#FFFFFF}
+.srch:focus-within,.filters select:focus-visible,.tog:focus-visible{outline:2px solid var(--ink);outline-offset:0}
+.count{margin-left:auto;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.clear{all:unset;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);border-bottom:1px solid;white-space:nowrap}
+.clear[hidden],.bar > .clear{display:none}
+.clear:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+/* celular: botón que abre el cajón */
+.bar-open{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;background:var(--ink);color:#FFFFFF;font-size:15px;font-weight:600;cursor:pointer}
+.bar-open:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.badge{display:grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#FFFFFF;color:var(--ink);font-size:12px;font-variant-numeric:tabular-nums}
+.badge[hidden]{display:none}
+.sheet-bg{position:fixed;inset:0;z-index:21;background:rgba(20,20,19,.32);opacity:0;visibility:hidden;transition:opacity .25s ease,visibility 0s .25s;touch-action:none}
+.filters{position:fixed;left:0;right:0;bottom:0;z-index:22;display:flex;flex-direction:column;gap:10px;max-height:calc(100% - 48px);overflow-y:auto;overscroll-behavior:contain;
+  padding:8px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  background:#FFFFFF;box-shadow:0 -12px 40px rgba(20,20,19,.18);transform:translateY(100%);visibility:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s .3s}
+.bar.open .sheet-bg{opacity:1;visibility:visible;transition:opacity .25s ease}
+.bar.open .filters{transform:none;visibility:visible;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.filters.dragging{transition:none}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:14px 0 6px;position:relative;touch-action:none;cursor:grab}
+.sheet-head::before{content:"";position:absolute;top:0;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:#D5D8DD}
+.sheet-head b{font-family:var(--f-serif);font-size:24px;font-weight:700}
+.sheet-x{all:unset;width:40px;height:40px;display:grid;place-items:center;font-size:22px;cursor:pointer;margin-right:-8px}
+.sheet-x:focus-visible{outline:2px solid var(--ink)}
+.filters .tog{justify-content:flex-start}
+.sheet-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:8px;padding-top:14px;border-top:1px solid #E6E8EB}
+.sheet-go{all:unset;box-sizing:border-box;height:48px;padding:0 20px;background:var(--ink);color:#FFFFFF;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center}
+.sheet-go:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){ .filters,.bar.open .filters,.sheet-bg,.bar.open .sheet-bg{transition:none} }
+
+/* ---------- Línea de tiempo: una marca por hecho en su fecha real; la aguja sigue al hecho en pantalla ---------- */
+.tl{position:sticky;top:0;z-index:19;display:flex;align-items:center;gap:14px;
+  padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));
+  background:rgba(255,255,255,.93);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid #EEF0F2}
+.tl[hidden]{display:none}
+.tl-now{flex:none;width:56px;display:flex;flex-direction:column;gap:4px}
+.tl-now b{font-family:var(--f-serif);font-weight:800;font-size:24px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tl-now small{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.tl-axis{flex:1;min-width:0}
+/* eje: línea base, una rayita por mes y una más alta por año (el ancho de cada año es el mismo: escala de tiempo real) */
+.tl-track{--years:8;position:relative;height:26px;cursor:pointer;touch-action:none;
+  background:
+    linear-gradient(90deg,#9AA1AB 1px,transparent 1px) 0 100%/calc(100% / var(--years)) 9px repeat-x,
+    linear-gradient(90deg,#DADDE1 1px,transparent 1px) 0 100%/calc(100% / var(--years) / 12) 4px repeat-x,
+    linear-gradient(#C4C8CE,#C4C8CE) 0 100%/100% 1px no-repeat}
+.tl-track:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:2px}
+.tl-ticks{position:absolute;inset:0 0 1px;pointer-events:none}
+/* las marcas son semitransparentes: los días con muchos hechos se ven más oscuros */
+.tl-ticks i{position:absolute;bottom:0;width:2px;margin-left:-1px;height:12px;background:var(--ink);opacity:.34;border-radius:1px 1px 0 0}
+.tl-ticks i.k{height:19px;background:var(--hito);opacity:.9;z-index:1}
+.tl-ticks i.off{opacity:.08;background:var(--ink);height:8px}
+.tl-needle{position:absolute;top:-4px;bottom:-5px;left:0;border-left:2px solid var(--ink);margin-left:-1px;pointer-events:none;z-index:2}
+.tl-needle::before{content:"";position:absolute;top:-2px;left:-5px;width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.tl-years{display:flex;margin-top:5px}
+.tl-years button{all:unset;flex:1;min-width:0;text-align:center;font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;color:#8A919C;cursor:pointer;border-radius:4px;padding:1px 0}
+.tl-years button:hover{color:var(--ink)}
+.tl-years button[aria-current="true"]{color:var(--ink)}
+.tl-years button:disabled{color:#CDD1D6;cursor:default}
+.tl-years button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.tl-tip{position:absolute;top:calc(100% + 24px);left:0;transform:translateX(-50%);width:max-content;max-width:260px;padding:8px 10px;
+  background:#FFFFFF;border:1px solid #E6E8EB;border-radius:8px;box-shadow:0 8px 24px rgba(20,20,19,.12);pointer-events:none;z-index:3}
+.tl-tip[hidden]{display:none}
+.tl-tip small{display:block;margin-bottom:3px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tl-tip small .k{color:var(--hito)}
+.tl-tip > span{display:block;font-family:var(--f-serif);font-size:15px;line-height:1.25;font-weight:700;color:var(--ink)}
+
+/* ---------- Escritorio: fila horizontal ---------- */
+@media (min-width:900px){
+  html,body{overflow:hidden;height:100%}
+  .tl{position:fixed;top:0;left:0;right:0;gap:28px;border-bottom:0;
+    padding:calc(18px + env(safe-area-inset-top,0px)) max(64px,env(safe-area-inset-right,0px)) 12px max(64px,env(safe-area-inset-left,0px))}
+  .tl-now{width:92px}
+  .tl-now b{font-size:34px}
+  .tl-years button{font-size:11px}
+  /* filtros: en escritorio van en línea dentro de la barra, sin cajón */
+  .bar{gap:16px;padding:12px max(64px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(64px,env(safe-area-inset-left,0px))}
+  .bar-open,.sheet-bg,.sheet-head,.sheet-foot{display:none}
+  .filters{position:static;flex-direction:row;align-items:center;gap:8px;max-height:none;overflow:visible;padding:0;background:none;box-shadow:none;transform:none;visibility:visible;transition:none;
+    flex:1 1 auto;min-width:0}
+  /* los controles se achican con la ventana en vez de desbordar la barra */
+  .srch{flex:1 1 280px;min-width:150px;max-width:280px}
+  .filters select{flex:0 1 200px;min-width:110px;max-width:200px;text-overflow:ellipsis}
+  .tog{flex:none}
+  .count{flex:none}
+  .bar > .clear:not([hidden]){display:inline}
+  .rail{flex-direction:row;align-items:center;height:100%;overflow-x:auto;overflow-y:hidden;gap:88px;
+    padding-block:0 84px;padding-left:max(64px,env(safe-area-inset-left,0px));padding-right:max(64px,env(safe-area-inset-right,0px));
+    scroll-snap-type:x proximity;scroll-padding-inline:64px;scrollbar-width:thin;scrollbar-color:#D5D8DD transparent;overscroll-behavior-x:contain}
+  .pile{--fs:16px;scroll-snap-align:center}
+  .intro{scroll-snap-align:start}
+  /* el texto de la fila no se selecciona con el mouse: fijo, para no recalcular estilos en cada arrastre */
+  .rail{cursor:grab;-webkit-user-select:none;user-select:none}
+  /* durante el arrastre solo cambia una propiedad del propio riel (sin selectores descendientes) */
+  .rail.dragging{scroll-snap-type:none}
+  /* capa transparente que muestra la mano cerrada y bloquea hovers y clics mientras se arrastra */
+  #shield{position:fixed;inset:0;z-index:40;cursor:grabbing;display:none}
+  #shield.on{display:block}
+  .hint .h{display:inline}
+  .hint .v{display:none}
+  /* años: un eje punteado arriba, con el año fijo mientras se recorre su grupo */
+  .rail{gap:0;align-items:stretch;padding-top:calc(88px + env(safe-area-inset-top,0px))}
+  .intro{align-self:center;margin-right:96px;width:460px}
+  .empty{align-self:center;margin-left:40px;width:440px}
+  .yr{display:flex;flex-direction:column;flex:none}
+  .yrow{display:flex;align-items:center;gap:88px;flex:1;min-height:0;padding:0 88px 0 24px}
+  /* el año grande vive en la línea de tiempo; en la fila queda una etiqueta chica al comienzo de cada año */
+  .year{display:flex;width:auto;padding:4px 0 0;border-bottom:0;scroll-margin:0}
+  .yl{flex-direction:row;align-items:baseline;gap:8px;padding:0 24px;color:#9AA1AB}
+  .yl::after{display:none}
+  .year b{font-family:var(--f-sans);font-size:12px;font-weight:600;letter-spacing:.06em}
+  .year small{order:2;font-size:10px;color:inherit}
+}
+@media (min-width:900px) and (max-height:820px){ .pile{--fs:14px} }
+@media (min-width:900px) and (max-height:680px){ .pile{--fs:12px} }
+@media (prefers-reduced-motion:reduce){ .about[open],.about[open]::backdrop{animation:none} .front{animation:none} .back{transition:none} .stroke{transition:none} }
+</style>
+
+<nav class="tl" id="tl" aria-label="Línea de tiempo" hidden>
+  <div class="tl-now" aria-hidden="true"><b id="tl-y"></b><small id="tl-d"></small></div>
+  <div class="tl-axis">
+    <div class="tl-track" id="tl-track" role="slider" tabindex="0" aria-label="Fecha del hecho en pantalla" aria-valuemin="1">
+      <div class="tl-ticks" id="tl-ticks"></div>
+      <span class="tl-needle" id="tl-needle"></span>
+      <span class="tl-tip" id="tl-tip" hidden></span>
+    </div>
+    <div class="tl-years" id="tl-years"></div>
+  </div>
+</nav>
+<main class="rail" id="rail" tabindex="-1" aria-label="Cronología: deslizá para recorrer los hechos"></main>
+
+<nav class="bar" id="bar" aria-label="Filtros">
+  <button class="bar-open" id="bar-open" type="button" aria-expanded="false" aria-controls="filters"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M1.5 3.5h13M4 8h8M6.5 12.5h3"/></svg>Filtrar<span class="badge" id="nf" hidden></span></button>
+  <div class="sheet-bg" id="sheet-bg" data-close></div>
+  <div class="filters" id="filters" aria-label="Filtros">
+    <div class="sheet-head" id="sheet-head"><b>Filtrar</b><button class="sheet-x" type="button" data-close aria-label="Cerrar filtros">×</button></div>
+    <label class="srch" for="q"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5"></circle><path d="M11 11l3.5 3.5"></path></svg><input id="q" type="search" placeholder="Buscar persona, medio o tema" aria-label="Buscar persona, medio o tema"></label>
+    <select id="th" aria-label="Filtrar por hilo"></select>
+    <select id="tp" aria-label="Filtrar por tema"></select>
+    <button class="tog" id="hitos" type="button" aria-pressed="false"><svg viewBox="0 0 23 66" aria-hidden="true"><path d="M8 21V49a3.5 3.5 0 0 0 7 0V9a5.5 5.5 0 0 0-11 0v42.5a7.5 7.5 0 0 0 15 0V15" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg>Solo hitos</button>
+    <div class="sheet-foot"><button class="clear" type="button" data-reset>Borrar filtros</button><button class="sheet-go" id="sheet-go" type="button" data-close></button></div>
+  </div>
+  <button class="clear" id="clear" type="button" data-reset hidden>Borrar filtros</button>
+  <span class="count" id="count" aria-live="polite"></span>
+</nav>
+
+<dialog class="about" id="about" aria-labelledby="about-t"></dialog>
+
+<script>
+/*__DATA__*/
+
+/* ---------- utilidades ---------- */
+const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const MON3 = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const DAYS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+const KIND = { nota:"Nota", red:"Red social", video:"Video", oficial:"Documento" };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+function shortDate(d){ const [y,m,dd] = d.split("-"); return dd ? `${+dd} ${MON3[+m-1]} ${y}` : m ? `${MONTHS[+m-1]} ${y}` : y; }
+// fecha de hoy en Asunción (AAAA-MM-DD), para la cabecera de la portada; si el navegador no conoce la zona, usa la local
+function todayAsuncion(){
+  try { return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Asuncion", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
+  catch (_) { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`; }
+}
+function longDate(d){
+  if (!d) return "";
+  const [y,m,dd] = d.split("-").map(Number);
+  if (!dd) return `${MONTHS[m-1]} de ${y}`;
+  const wd = DAYS[new Date(Date.UTC(y, m-1, dd)).getUTCDay()];
+  return `${wd} ${dd} de ${MONTHS[m-1]} de ${y}`;
+}
+function tint(name){ let h = 0; for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return `hsl(${20 + h % 50},22%,95.5%)`; }
+function mast(o){
+  let name = o, extra = "";
+  const p = o.match(/^(.*?)\s*\((.*)\)\s*$/); if (p) { name = p[1]; extra = p[2]; }
+  if (name.includes(" · ")) { const [a, b] = name.split(" · "); if (a === "X") { name = b; extra = extra || "en X"; } else { name = a; extra = extra || b; } }
+  const x = name.match(/^(.*) en X$/); if (x) { name = x[1]; extra = extra || "en X"; }
+  return { name, extra };
+}
+const mastSize = (n, big) => big ? (n.length > 30 ? 1.3 : n.length > 22 ? 1.6 : n.length > 16 ? 2 : 2.5) : (n.length > 26 ? 1.1 : n.length > 18 ? 1.35 : 1.65);
+const headSize = n => n > 120 ? 1.4 : n > 90 ? 1.6 : n > 60 ? 1.875 : 2.125;
+function greek(seed){
+  let h = 2166136261; for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  const rnd = () => (h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0, h / 4294967296);
+  let out = "", n = 9 + Math.floor(rnd() * 4);
+  for (let i = 0; i < n; i++) {
+    const end = rnd() < .18 || i === n - 1;
+    out += `<span class="ln" style="width:${end ? 35 + Math.round(rnd() * 40) : 100}%"></span>`;
+  }
+  return out;
+}
+
+/* ---------- datos derivados ---------- */
+const ORDER = {};
+// orden de cada pila como un mazo: [frente, atrás 1, atrás 2, …] (índices de ORDER)
+const DECK = {};
+function deck(id, N){ let d = DECK[id]; if (!d || d.length !== N) d = DECK[id] = [...Array(N).keys()]; return d; }
+for (const e of EVENTS) {
+  // todo sale de las fechas de publicación: al frente va la primera publicación del hecho,
+  // y la pila se ubica en esa fecha (las fuentes sin fecha quedan detrás)
+  ORDER[e.id] = e.src.map((s, i) => ({ ...s, i })).sort((a, b) =>
+    (b.h ? 1 : 0) - (a.h ? 1 : 0) || (a.d || "9999").localeCompare(b.d || "9999") || a.i - b.i);
+  // texto buscable de cada publicación: medio, titular, copete y las personas que nombra (con sus otras grafías)
+  for (const s of ORDER[e.id]) s._txt = norm(s.o + " " + (s.h || "") + " " + (s.l || "") + " " + (s.n || []).map(id => (PEOPLE[id.replace(/^~/, "")] || []).join(" ")).join(" "));
+  e._txt = ORDER[e.id].map(s => s._txt).join(" ");
+  e.p = ORDER[e.id].find(s => s.d)?.d || e.d;
+}
+EVENTS.sort((a, b) => a.p.localeCompare(b.p) || a.d.localeCompare(b.d) || (a.o || 0) - (b.o || 0));
+const OUTLETS = new Set(EVENTS.flatMap(e => e.src.map(s => mast(s.o).name)));
+const NSRC = EVENTS.reduce((n, e) => n + e.src.length, 0);
+
+/* ---------- ruido y textura de papel, generados una vez (negro con transparencia, sin fusión) ---------- */
+try {
+  const c = document.createElement("canvas"); c.width = c.height = 160;
+  const g = c.getContext("2d"), im = g.createImageData(160, 160);
+  for (let i = 0; i < im.data.length; i += 4) { im.data[i] = im.data[i+1] = im.data[i+2] = 0; im.data[i+3] = Math.random() * 55 | 0; }
+  g.putImageData(im, 0, 0);
+  document.documentElement.style.setProperty("--noise", `url(${c.toDataURL()})`);
+} catch (_) {}
+(function paperTexture(){
+  const root = document.documentElement, img = new Image();
+  img.decoding = "async";
+  img.onload = () => {
+    try {
+      const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
+      const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(img, 0, 0);
+      const d = g.getImageData(0, 0, c.width, c.height), a = d.data;
+      for (let i = 0; i < a.length; i += 4) { const y = .299 * a[i] + .587 * a[i+1] + .114 * a[i+2]; a[i] = a[i+1] = a[i+2] = 0; a[i+3] = 255 - y; }
+      g.putImageData(d, 0, 0);
+      c.toBlob(b => b ? root.style.setProperty("--paper", `url(${URL.createObjectURL(b)})`) : root.classList.add("blend"), "image/png");
+    } catch (_) { root.classList.add("blend"); }
+  };
+  img.onerror = () => root.classList.add("blend");
+  img.src = "assets/papel.jpg";
+})();
+
+/* ---------- una pila ---------- */
+const SLOTS = [{ l: 2.25, w: 86.5, r: 1.4 }, { l: 1.5, w: 90.4, r: -1.1 }, { l: .75, w: 95.2, r: .7 }];
+const CLIP_D = "M8 21V49a3.5 3.5 0 0 0 7 0V9a5.5 5.5 0 0 0-11 0v42.5a7.5 7.5 0 0 0 15 0V15";
+const CLIP = `<svg class="clip" viewBox="0 0 23 66" aria-hidden="true"><path d="${CLIP_D}" stroke="#8E2018" stroke-width="3.4"/><path d="${CLIP_D}" stroke="var(--hito)" stroke-width="2.5"/><path d="${CLIP_D}" stroke="rgba(255,255,255,.5)" stroke-width=".7" transform="translate(-.45 -.3)"/></svg>`;
+const CLIP_ICON = `<svg viewBox="0 0 23 66" aria-hidden="true"><path d="${CLIP_D}" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg>`;
+const LAYERS = `<i class="tex"></i><i class="nz"></i>`;
+/* forma de la hoja suelta: cada papel de la pila toma una variante distinta (esquina corrida a la izquierda,
+   caída, levantada, borde más plano o más curvo) con un leve azar fijo por pila. Valores en em de la hoja chica:
+   [corrimiento de la esquina derecha hacia adentro, caída de esa esquina, caída de la esquina izquierda, curvatura] */
+const SHAPES = [[0, 0, 0, 1], [.8, .1, .06, .8], [.1, .42, -.02, .5], [-.35, -.15, .14, 1.3], [.3, -.06, .28, .35], [-.1, .2, 0, 1.9]];
+function fnv(s){ let h = 2166136261; for (const ch of s) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0; return h; }
+function shapeVars(seed, k, big){
+  const sh = SHAPES[(fnv(seed) + k) % SHAPES.length], h = fnv(seed + ":" + k);
+  const j = n => (((h >>> (n * 6)) & 63) / 63 - .5) * .1;
+  const kx = big ? 1.6 : 1, ky = big ? 2.2 : 1;
+  return `--tx:${Math.max(big ? 0 : -1, (sh[0] + j(0)) * kx).toFixed(3)}em;--ty:${((sh[1] + j(1)) * ky).toFixed(3)}em;--ly:${((sh[2] + j(2)) * ky).toFixed(3)}em;--sg:${(sh[3] + j(3) * 3).toFixed(2)}`;
+}
+const BACKSHEET = (cls, vars) => `<div class="sheet-back ${cls}" style="${vars}"><div class="sb-shape"><i class="tex"></i><i class="nz"></i></div></div>`;
+
+// alto estimado de una pila sin dibujar (medido sobre las pilas reales): papeles de atrás, titular, copete y pie
+function estHeight(nBacks, s){
+  const em = 18.9 + 3.15 * nBacks + ((s.h || "").length >= 120 ? 2 : 0) - (s.l ? 1.5 : 0);
+  return `calc(${em.toFixed(2)}em + 121px)`;
+}
+function pileHTML(e){
+  const S = ORDER[e.id], N = S.length;
+  const D = deck(e.id, N), f = D[0];
+  const s = S[f], m = mast(s.o);
+  const backs = D.slice(1, 4);
+  const slots = SLOTS.slice(3 - backs.length);
+  const backHTML = backs.slice().reverse().map((si, k) => {
+    const b = S[si], bm = mast(b.o), sl = slots[k];
+    return `<button type="button" class="paper back" data-pick="${si}" aria-label="Traer al frente: ${esc(bm.name)}"
+      style="left:${sl.l}em;width:${sl.w}%;top:${(k * 3.3 + .6).toFixed(2)}em;--r:${sl.r}deg;--tint:${tint(bm.name)}">
+      ${BACKSHEET("sm", shapeVars(e.id, si, false))}<div class="sheet">${LAYERS}
+      <div class="mast" style="font-size:${mastSize(bm.name, false)}em">${esc(bm.name)}</div></div></button>`;
+  }).join("");
+  const head = s.h
+    ? `<div class="head" style="font-size:${headSize(s.h.length)}em"><span class="mk">${esc(s.h)}</span></div>`
+    : `<div class="head none">Titular no registrado</div>`;
+  const body = s.l
+    ? `<div class="body lede">${esc(s.l)}</div>`
+    : `<div class="body" aria-hidden="true">${greek(e.id + s.u)}</div>`;
+  const kind = (KIND[s.k] || "Nota") + (m.extra ? ` · ${m.extra}` : "");
+  const t = THREADS[e.th];
+  const topics = (e.st || []).map(k => `<button type="button" data-topic="${k}">${esc(TOPICS[k])}</button>`).join("");
+  const nav = N > 1 ? `<span class="nav"><span>${esc(m.name)} · ${f + 1} de ${N}</span>
+      <button type="button" data-nav="-1" aria-label="Fuente anterior">←</button><button type="button" data-nav="1" aria-label="Fuente siguiente">→</button></span>` : `<span class="nav"><span>${esc(m.name)} · 1 de 1</span>
+      <button type="button" disabled aria-label="Fuente anterior">←</button><button type="button" disabled aria-label="Fuente siguiente">→</button></span>`;
+  return `<article class="pile${e.key ? " key" : ""}" id="e-${e.id}" data-id="${e.id}" style="--c:var(${t.c});--est:${estHeight(backs.length, s)}" aria-label="${esc(shortDate(e.p)  + (e.key ? ", hito" : "") + ", " + N + (N === 1 ? " fuente" : " fuentes"))}">
+    <div class="stack" style="padding-top:${(backs.length * 3.3 + 1.6).toFixed(2)}em">${backHTML}
+      <div class="paper front" data-src="${f}" style="--tint:${tint(m.name)}">${BACKSHEET("", shapeVars(e.id, f, true))}${e.key ? CLIP : ""}
+        <div class="sheet">${LAYERS}<i class="fold"></i>
+          <div class="dateline"><span>${esc(kind)}</span><span>${esc(longDate(s.d))}</span><span>${s.h ? `${f + 1} de ${N} fuentes` : "Sin titular registrado"}</span></div>
+          <div class="mast" style="font-size:${mastSize(m.name, true)}em">${esc(m.name)}</div>
+          ${head}${body}
+        </div>
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-meta"><span class="who"><span class="dot"></span><span>${esc(shortDate(s.d || e.p))} · ${esc(t.label)}</span>${e.key ? `<span class="hito">· ${CLIP_ICON}Hito</span>` : ""}</span>${nav}</div>
+      <div class="cap-foot"><a href="${esc(s.u)}" target="_blank" rel="noopener noreferrer">${s.k === "video" ? "Ver el video" : s.k === "red" ? "Ver la publicación" : s.k === "oficial" ? "Abrir el documento" : "Leer la nota"} en ${esc(m.name)} <span class="ext" aria-hidden="true">↗</span><span class="sr">(se abre en una ventana nueva)</span></a>${s.a ? `<a href="${esc(s.a)}" target="_blank" rel="noopener noreferrer">Ver copia archivada <span class="ext" aria-hidden="true">↗</span><span class="sr">(se abre en una ventana nueva)</span></a>` : ""}${topics}</div>
+    </div>
+  </article>`;
+}
+
+/* ---------- portada y cierre ---------- */
+/* enlaces del autor junto a "Sobre este proyecto"; GitHub usa "repository" de package.json y no aparece si está vacío */
+const X_HANDLE = "mendigodetokens";
+const ICON_X = `<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`;
+const ICON_GH = `<svg viewBox="0 0 16 16" width="19" height="19" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
+function SOCIAL(){
+  const a = (href, label, icon) => `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer" title="${esc(label)}" aria-label="${esc(label)} (se abre en una ventana nueva)">${icon}</a>`;
+  return a(`https://x.com/${X_HANDLE}`, `@${X_HANDLE} en X`, ICON_X) + (META.repo ? a(META.repo, "Código y datos en GitHub", ICON_GH) : "");
+}
+function introHTML(){
+  return `<section class="intro" id="inicio">
+    <div class="ed"><span>Edición especial</span><span>Asunción, ${esc(longDate(todayAsuncion()))}</span></div>
+    <h1>El caso ueno</h1>
+    <p class="lede">Una cronología visual de lo que publicaron medios, legisladores y autoridades sobre ueno bank, desde sus orígenes hasta su resolución. <span class="by">Por Ricardo Ovelar.</span></p>
+    <div class="intro-act">
+      <button class="about-open" type="button" data-about aria-haspopup="dialog">Sobre este proyecto</button>
+      <span class="social">${SOCIAL()}</span>
+    </div>
+    <div class="stats"><span><b>${EVENTS.length}</b>hechos</span><span><b>${NSRC}</b>fuentes</span><span><b>${OUTLETS.size}</b>medios y emisores</span></div>
+    <div class="hint"><span class="h">Arrastrá o deslizá hacia el costado →</span><span class="v">Deslizá hacia abajo ↓</span></div>
+  </section>`;
+}
+/* "Sobre este proyecto": cómo leer la página y los datos abiertos, en un diálogo que se abre desde la portada */
+function aboutHTML(){
+  const repo = META.repo ? `<p><a href="${esc(META.repo)}" target="_blank" rel="noopener noreferrer">Ver los datos y cómo sumar fuentes <span class="ext" aria-hidden="true">↗</span><span class="sr">(se abre en una ventana nueva)</span></a></p>` : "";
+  return `<div class="about-head"><h2 id="about-t">Sobre este proyecto</h2><button class="about-x" type="button" data-close-about aria-label="Cerrar">×</button></div>
+    <p class="about-lede">“El caso ueno” es un proyecto con fines educativos que ayuda a visualizar, de manera interactiva y didáctica, una cronología de los hechos de público conocimiento concernientes a ueno bank. Puede contener errores, y cualquier comentario para mejorar el archivo será más que bienvenido. Cualquier consulta pueden hacerla a <a href="mailto:hola@rickovelar.com">hola@rickovelar.com</a>.</p>
+    <p>Cada diario es una publicación real: su medio, su titular y su copete tal como salieron, con sus propias valoraciones, su fecha y su enlace. Esta página no agrega textos propios: solo agrupa las publicaciones que tratan el mismo hecho y las ordena por fecha. Cada pila se ubica en la fecha de su primera publicación, y cada diario muestra la suya. Cuando no hay copete registrado, el diario muestra líneas grises decorativas.</p>
+    <h3>Datos abiertos</h3>
+    <p>Todas las entradas y fuentes están en archivos CSV que cualquiera puede revisar, corregir o ampliar. Datos bajo CC BY 4.0, excepto los titulares y copetes, que pertenecen a cada medio y se citan con fines informativos; código bajo MIT.</p>
+    ${repo}
+    <p>La búsqueda también encuentra a las personas que cada publicación nombra en su titular, su copete o su texto: el de la nota, la publicación o el documento, o el título y la descripción del video (no lo que se dice en el video). Que una persona sea nombrada no indica su papel en los hechos; para saberlo hay que leer la publicación.</p>
+    <p>Textura de papel: foto de <a href="https://unsplash.com/@indieground?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText" target="_blank" rel="noopener noreferrer">Indieground Design<span class="ext sm" aria-hidden="true">↗</span><span class="sr">(se abre en una ventana nueva)</span></a> en <a href="https://unsplash.com/photos/creased-off-white-paper-sheet-vgFESKJqUyo?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText" target="_blank" rel="noopener noreferrer">Unsplash<span class="ext sm" aria-hidden="true">↗</span><span class="sr">(se abre en una ventana nueva)</span></a>.</p>
+    <p>Datos actualizados al ${esc(shortDate(META.updated))}.</p>
+    <p class="about-sign">Un proyecto de <b>Ricardo Ovelar</b></p>`;
+}
+
+/* ---------- filtros y render ---------- */
+const state = { q: "", th: "", tp: "", key: false };
+{ const h = location.hash.replace(/^#/, ""); if (h.startsWith("tema-") && TOPICS[h.slice(5)]) state.tp = h.slice(5); }
+const $ = id => document.getElementById(id);
+const rail = $("rail");
+/* línea de tiempo: escala lineal del 1 de enero del primer año al 1 de enero siguiente al último */
+const tl = $("tl"), tlTrack = $("tl-track"), tlNeedle = $("tl-needle"), tlTip = $("tl-tip"), tlYears = $("tl-years");
+const EV = Object.fromEntries(EVENTS.map(e => [e.id, e]));
+const TY0 = +EVENTS[0].p.slice(0, 4), TY1 = +EVENTS[EVENTS.length - 1].p.slice(0, 4) + 1;
+const TT0 = Date.UTC(TY0, 0, 1), TT1 = Date.UTC(TY1, 0, 1);
+const tAt = p => Date.parse(p.length === 4 ? p + "-01-01" : p.length === 7 ? p + "-01" : p);
+for (const e of EVENTS) e._x = (tAt(e.p) - TT0) / (TT1 - TT0) * 100;
+tlTrack.style.setProperty("--years", TY1 - TY0);
+$("tl-ticks").innerHTML = EVENTS.map(e => `<i${e.key ? ' class="k"' : ""} style="left:${e._x.toFixed(3)}%"></i>`).join("");
+const TICK = Object.fromEntries(EVENTS.map((e, i) => [e.id, $("tl-ticks").children[i]]));
+tlYears.innerHTML = Array.from({ length: TY1 - TY0 }, (_, i) => TY0 + i).map(y => `<button type="button" data-year="${y}" aria-label="Ir a ${y}">${y}</button>`).join("");
+let VIS = [], activeYear = "", activeId = "";
+$("th").innerHTML = `<option value="">Todos los hilos</option>` + Object.entries(THREADS).map(([k, t]) => `<option value="${k}">${esc(t.label)}</option>`).join("");
+$("tp").innerHTML = `<option value="">Todos los temas</option>` + Object.entries(TOPICS).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("");
+
+function visible(){
+  const q = norm(state.q.trim());
+  return EVENTS.filter(e => (!state.th || e.th === state.th) && (!state.tp || (e.st || []).includes(state.tp)) && (!state.key || e.key) && (!q || e._txt.includes(q)));
+}
+// al buscar, cada pila muestra al frente la primera publicación que coincide; al borrar la búsqueda vuelven a su orden
+const SEARCH_FRONT = new Set();
+function frontForQuery(list){
+  const q = norm(state.q.trim());
+  for (const id of SEARCH_FRONT) delete DECK[id];
+  SEARCH_FRONT.clear();
+  if (!q) return;
+  for (const e of list) {
+    const i = ORDER[e.id].findIndex(s => s._txt.includes(q));
+    if (i > 0) { const N = ORDER[e.id].length; DECK[e.id] = [...Array(N).keys()].map(k => (k + i) % N); SEARCH_FRONT.add(e.id); }
+  }
+}
+function render(){
+  const list = visible();
+  frontForQuery(list);
+  let html = introHTML();
+  const groups = [];
+  for (const e of list) { const y = e.p.slice(0, 4); if (!groups.length || groups[groups.length - 1].y !== y) groups.push({ y, items: [] }); groups[groups.length - 1].items.push(e); }
+  // los hechos filtrados quedan como marcas tenues; los años sin hechos visibles no se pueden elegir
+  VIS = list;
+  const shown = new Set(list.map(e => e.id));
+  for (const e of EVENTS) TICK[e.id].classList.toggle("off", !shown.has(e.id));
+  for (const b of tlYears.children) b.disabled = !groups.some(g => g.y === b.dataset.year);
+  tl.hidden = !list.length;
+  tlTrack.setAttribute("aria-valuemax", list.length);
+  activeYear = ""; activeId = "";
+  for (const g of groups) {
+    const n = g.items.length;
+    html += `<section class="yr" id="y-${g.y}" aria-label="${g.y}"><div class="year"><span class="yl"><small>${n} ${n === 1 ? "hecho" : "hechos"}</small><b>${g.y}</b></span></div><div class="yrow">${g.items.map(pileHTML).join("")}</div></section>`;
+  }
+  if (!list.length) html += `<p class="empty">Ningún hecho coincide con los filtros. <button type="button" data-reset>Ver todo</button></p>`;
+  rail.innerHTML = html;
+  if (typeof observeStacks === "function") observeStacks(rail);
+  $("count").textContent = `${list.length} de ${EVENTS.length} hechos`;
+  const active = (state.q.trim() ? 1 : 0) + (state.th ? 1 : 0) + (state.tp ? 1 : 0) + (state.key ? 1 : 0);
+  $("nf").textContent = active; $("nf").hidden = !active; $("clear").hidden = !active;
+  $("sheet-go").textContent = `Ver ${list.length} ${list.length === 1 ? "hecho" : "hechos"}`;
+  $("th").value = state.th; $("tp").value = state.tp; $("q").value = state.q;
+  $("hitos").setAttribute("aria-pressed", state.key);
+  if (typeof markYear === "function") requestAnimationFrame(markYear);
+}
+function setFilter(patch){
+  Object.assign(state, patch);
+  const h = state.tp ? "#tema-" + state.tp : "";
+  if (location.hash !== h && !(location.hash.startsWith("#e-") && !patch.tp)) { try { history.replaceState(null, "", h || location.pathname + location.search); } catch (_) {} }
+  render();
+  rail.scrollTo({ left: 0, top: 0 }); window.scrollTo(0, 0);
+}
+function rerenderPile(id, focusSel, from){
+  const el = document.getElementById("e-" + id), e = EVENTS.find(x => x.id === id);
+  if (!el || !e) return;
+  const before = from != null && !reduced.matches ? snapshot(el) : null;
+  el.outerHTML = pileHTML(e);
+  const np = document.getElementById("e-" + id);
+  if (np && typeof observeStacks === "function") { observeStacks(np); if (tilt) setTilt(tilt, true); }
+  if (np && before) { shuffle(np, before, from); setTimeout(markFocus, SHUFFLE_MS); }
+  else requestAnimationFrame(markFocus);
+  if (focusSel) document.querySelector(`#e-${CSS.escape(id)} ${focusSel}`)?.focus({ preventScroll: true });
+}
+
+/* ---------- cambio de diario: la pila como un mazo en profundidad ----------
+   1) el diario de adelante se achica, retrocede y se desvanece; 2) el elegido sale de su lugar y crece hasta el frente,
+   asomando de arriba hacia abajo como si lo sacaran de la pila; 3) los demás se acomodan y el anterior aparece al fondo.
+   Se dibuja la pila nueva y cada papel se anima desde donde estaba (FLIP); las cajas se miden con offset*, sin rotaciones. */
+const SHUFFLE_MS = 720;
+function snapshot(pile){
+  const map = new Map();
+  for (const p of pile.querySelectorAll(".stack > .paper")) {
+    const front = p.classList.contains("front");
+    map.set(+(front ? p.dataset.src : p.dataset.pick), { el: p, front, x: p.offsetLeft, y: p.offsetTop, w: p.offsetWidth, h: p.offsetHeight,
+      r: front ? -.3 : parseFloat(p.style.getPropertyValue("--r")) || 0 });
+  }
+  return map;
+}
+// transformación que lleva la caja nueva (n) a la vieja (o), respetando el transform-origin del elemento
+function fromBox(o, el){
+  const [ox, oy] = getComputedStyle(el).transformOrigin.split(" ").map(parseFloat), s = o.w / el.offsetWidth;
+  return `translate(${(o.x - el.offsetLeft - ox * (1 - s)).toFixed(1)}px,${(o.y - el.offsetTop - oy * (1 - s)).toFixed(1)}px) scale(${s.toFixed(4)}) rotate(${o.r}deg)`;
+}
+function shuffle(pile, before, oldSrc){
+  const st = pile.querySelector(".stack"), ease = "cubic-bezier(.2,.75,.25,1)";
+  const nf = st.querySelector(":scope > .front"), newSrc = +nf.dataset.src;
+  const was = before.get(newSrc), old = before.get(oldSrc);
+  // copia del papel viejo; sin z-index se intercala a su profundidad (delante de los que estaban detrás de él)
+  const ghost = (o, z) => {
+    const g = o.el.cloneNode(true);
+    g.classList.add("ghost"); g.removeAttribute("data-pick"); g.setAttribute("aria-hidden", "true"); g.inert = true;
+    g.style.cssText += `;position:absolute;left:${o.x}px;top:${o.y}px;width:${o.w}px` + (z ? `;z-index:${z}` : "");
+    const ahead = z ? null : [...st.querySelectorAll(":scope > .paper:not(.ghost)")].find(p => p.offsetTop > o.y + 1);
+    st.insertBefore(g, ahead || null); return g;
+  };
+  const IN = 210, DUR = SHUFFLE_MS - IN;
+  // 1) el de adelante retrocede
+  if (old && old.front) {
+    const g = ghost(old, 3);
+    g.style.transformOrigin = "50% 0";
+    g.animate([{ transform: "translateY(0) scale(1) rotate(-.3deg)", opacity: 1 }, { opacity: 0, offset: .85 }, { transform: "translateY(-1.2em) scale(.9) rotate(-.3deg)", opacity: 0 }],
+      { duration: 260, easing: "cubic-bezier(.33,0,.67,1)", fill: "forwards" }).finished.then(() => g.remove(), () => {});
+  }
+  // 2) el elegido pasa al frente
+  const rest = "translate(0px,0px) scale(1) rotate(-.3deg)", em = parseFloat(getComputedStyle(nf).fontSize);
+  nf.classList.add("flip"); nf.style.zIndex = 1;
+  if (was && !was.front) {
+    // al salir solo se ve la franja que asomaba (hasta el papel que tenía delante); el resto se descubre al avanzar
+    const strip = Math.min(was.h, ...[...before.values()].filter(o => o.y > was.y + 1).map(o => o.y - was.y));
+    const shown = Math.max(0, nf.offsetHeight - strip * nf.offsetWidth / was.w);
+    const open = `inset(-6em -6em ${(-8 * em).toFixed(1)}px -6em)`;
+    const timing = { duration: DUR, delay: IN, easing: ease };
+    // el elegido nunca se vuelve transparente: queda opaco en su lugar y avanza; encima viaja la copia de su versión
+    // "de atrás" (solo cabecera), que se desvanece en el primer tramo del recorrido
+    nf.animate([
+      // el recorte se abre hasta más allá de la sombra (≈5em bajo el papel) antes de llegar, para que no se vea cortada
+      { transform: fromBox(was, nf), clipPath: `inset(0px -6em ${shown.toFixed(1)}px -6em)` },
+      { clipPath: open, offset: .7 },
+      { transform: rest, clipPath: open }
+    ], { ...timing, fill: "backwards" }).finished.then(() => { nf.style.zIndex = ""; }, () => {});
+    const g = ghost(was, 2);
+    g.style.clipPath = `inset(-3em -3em ${Math.max(0, was.h - strip).toFixed(1)}px -3em)`;
+    const toFront = fromBox({ x: nf.offsetLeft, y: nf.offsetTop, w: nf.offsetWidth, r: -.3 }, g);
+    g.animate([
+      { transform: `translate(0px,0px) scale(1) rotate(${was.r}deg)`, opacity: 1 },
+      { opacity: 0, offset: .3 },
+      { transform: toFront, opacity: 0 }
+    ], { ...timing, fill: "both" }).finished.then(() => g.remove(), () => {});
+  } else {
+    nf.animate([{ transform: "translate(0px,-2em) scale(.88) rotate(-.3deg)", opacity: 0 }, { transform: rest, opacity: 1 }],
+      { duration: DUR, delay: IN, easing: ease, fill: "backwards" }).finished.then(() => { nf.style.zIndex = ""; }, () => {});
+  }
+  // 3) los de atrás se acomodan; el que estaba adelante (o uno que no se veía) aparece en su lugar
+  for (const b of st.querySelectorAll(":scope > .back:not(.ghost)")) {
+    const o = before.get(+b.dataset.pick), r = parseFloat(b.style.getPropertyValue("--r")) || 0;
+    const at = `translate(0px,0px) scale(1) rotate(${r}deg)`;
+    if (o && !o.front) b.animate([{ transform: fromBox(o, b) }, { transform: at }], { duration: 440, delay: 110, easing: ease, fill: "backwards" });
+    else b.animate([{ transform: `translate(0px,-.7em) scale(.95) rotate(${r}deg)`, opacity: 0 }, { transform: at, opacity: 1 }],
+      { duration: 380, delay: 240, easing: ease, fill: "backwards" });
+  }
+}
+
+const about = $("about");
+about.innerHTML = aboutHTML();
+about.addEventListener("click", ev => {
+  // cierra con la ×, o con un toque fuera de la caja (el fondo es el propio <dialog>)
+  if (ev.target === about || ev.target.closest("[data-close-about]")) about.close();
+});
+rail.addEventListener("click", ev => {
+  if (ev.target.closest("[data-about]")) { about.showModal(); return; }
+  const pile = ev.target.closest(".pile");
+  const pick = ev.target.closest("[data-pick]");
+  // elegir un diario de atrás lo trae al frente y manda el de adelante al fondo; las flechas rotan el mazo
+  if (pick && pile) {
+    const id = pile.dataset.id, D = deck(id, ORDER[id].length), si = +pick.dataset.pick, f = D[0];
+    DECK[id] = [si, ...D.filter(x => x !== si && x !== f), f];
+    rerenderPile(id, "[data-nav='1']", f); return;
+  }
+  const nav = ev.target.closest("[data-nav]");
+  if (nav && pile) {
+    const id = pile.dataset.id, D = deck(id, ORDER[id].length), f = D[0];
+    if (+nav.dataset.nav > 0) D.push(D.shift()); else D.unshift(D.pop());
+    rerenderPile(id, `[data-nav='${nav.dataset.nav}']`, f); return;
+  }
+  const tp = ev.target.closest("[data-topic]");
+  if (tp) { setFilter({ tp: tp.dataset.topic }); return; }
+  if (ev.target.closest("[data-reset]")) setFilter({ q: "", th: "", tp: "", key: false });
+});
+$("q").addEventListener("input", ev => { state.q = ev.target.value; render(); });
+$("th").addEventListener("change", ev => setFilter({ th: ev.target.value }));
+$("tp").addEventListener("change", ev => setFilter({ tp: ev.target.value }));
+$("hitos").addEventListener("click", () => setFilter({ key: !state.key }));
+
+/* ---------- escritorio: rueda y flechas mueven la fila ---------- */
+const desktop = window.matchMedia("(min-width: 900px)");
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+/* ---------- línea de tiempo: aguja, año actual, saltos ---------- */
+function updateTimeline(pos, e){
+  tlNeedle.style.left = pos.toFixed(3) + "%";
+  if (e.id === activeId) return;
+  activeId = e.id;
+  $("tl-d").textContent = shortDate(e.p).replace(/ \d{4}$/, "");
+  tlTrack.setAttribute("aria-valuenow", VIS.indexOf(e) + 1);
+  tlTrack.setAttribute("aria-valuetext", longDate(e.p));
+  const year = e.p.slice(0, 4);
+  if (year === activeYear) return;
+  activeYear = year;
+  $("tl-y").textContent = year;
+  for (const b of tlYears.children) b.dataset.year === year ? b.setAttribute("aria-current", "true") : b.removeAttribute("aria-current");
+  for (const g of rail.querySelectorAll(".yr")) g.classList.toggle("on", g.id === `y-${year}`);
+}
+function goTo(e, smooth){
+  document.getElementById("e-" + e.id)?.scrollIntoView({ behavior: smooth && !reduced.matches ? "smooth" : "auto", inline: "center", block: desktop.matches ? "nearest" : "center" });
+}
+// el hecho visible más cercano a un punto del eje
+function nearestAt(clientX){
+  const r = tlTrack.getBoundingClientRect(), x = (clientX - r.left) / r.width * 100;
+  let best = null, d = Infinity;
+  for (const e of VIS) { const dd = Math.abs(e._x - x); if (dd < d) { d = dd; best = e; } }
+  return best;
+}
+function showTip(e){
+  if (!e) { tlTip.hidden = true; return; }
+  const s = ORDER[e.id][0];
+  tlTip.innerHTML = `<small>${esc(shortDate(e.p))}${e.key ? ` <span class="k">· Hito</span>` : ""}</small><span>${esc(s.h || "")}</span>`;
+  tlTip.hidden = false;
+  const w = tlTrack.clientWidth, half = tlTip.offsetWidth / 2, x = e._x / 100 * w;
+  tlTip.style.left = Math.max(half - 8, Math.min(w - half + 8, x)).toFixed(1) + "px";
+}
+let scrub = null;
+tlTrack.addEventListener("pointerdown", ev => {
+  if (ev.button !== 0) return;
+  const e = nearestAt(ev.clientX);
+  if (!e) return;
+  ev.preventDefault();
+  tlTrack.setPointerCapture(ev.pointerId);
+  scrub = e;
+  stopGlide(true);
+  goTo(e, false); showTip(e);
+});
+tlTrack.addEventListener("pointermove", ev => {
+  const e = nearestAt(ev.clientX);
+  if (scrub && e && e !== scrub) { scrub = e; goTo(e, false); }
+  if (scrub || ev.pointerType === "mouse") showTip(e);
+});
+const endScrub = ev => { if (!scrub) return; scrub = null; if (ev.pointerType !== "mouse") showTip(null); scheduleFocus(); };
+tlTrack.addEventListener("pointerup", endScrub);
+tlTrack.addEventListener("pointercancel", endScrub);
+tlTrack.addEventListener("pointerleave", () => { if (!scrub) showTip(null); });
+tlTrack.addEventListener("keydown", ev => {
+  if (ev.key === "Home" && VIS.length) { goTo(VIS[0], true); ev.preventDefault(); }
+  else if (ev.key === "End" && VIS.length) { goTo(VIS[VIS.length - 1], true); ev.preventDefault(); }
+});
+tlYears.addEventListener("click", ev => {
+  const button = ev.target.closest("[data-year]");
+  if (!button || button.disabled) return;
+  const heading = document.getElementById(`y-${button.dataset.year}`)?.querySelector(".year");
+  if (!heading) return;
+  stopGlide(true);
+  heading.scrollIntoView({ behavior: reduced.matches ? "auto" : "smooth", inline: "start", block: desktop.matches ? "nearest" : "start" });
+});
+/* ---------- celular: cajón de filtros ---------- */
+const bar = $("bar"), filters = $("filters"), barOpen = $("bar-open"), sheetHead = $("sheet-head");
+function openSheet(){
+  if (desktop.matches) return;
+  bar.classList.add("open");
+  barOpen.setAttribute("aria-expanded", "true");
+  filters.setAttribute("role", "dialog"); filters.setAttribute("aria-modal", "true");
+  filters.querySelector(".sheet-x").focus({ preventScroll: true });
+}
+function closeSheet(refocus){
+  if (!bar.classList.contains("open")) return;
+  bar.classList.remove("open");
+  barOpen.setAttribute("aria-expanded", "false");
+  filters.removeAttribute("role"); filters.removeAttribute("aria-modal");
+  filters.style.transform = "";
+  if (refocus !== false) barOpen.focus({ preventScroll: true });
+}
+barOpen.addEventListener("click", openSheet);
+bar.addEventListener("click", ev => {
+  if (ev.target.closest("[data-reset]")) { setFilter({ q: "", th: "", tp: "", key: false }); return; }
+  if (ev.target.closest("[data-close]")) closeSheet();
+});
+document.addEventListener("keydown", ev => {
+  if (!bar.classList.contains("open")) return;
+  if (ev.key === "Escape") { closeSheet(); ev.preventDefault(); return; }
+  if (ev.key !== "Tab") return;
+  // el foco no sale del cajón mientras está abierto
+  const f = [...filters.querySelectorAll("button,input,select")].filter(el => el.offsetParent);
+  if (ev.shiftKey && document.activeElement === f[0]) { f[f.length - 1].focus(); ev.preventDefault(); }
+  else if (!ev.shiftKey && document.activeElement === f[f.length - 1]) { f[0].focus(); ev.preventDefault(); }
+});
+desktop.addEventListener("change", () => { if (desktop.matches) closeSheet(false); });
+// deslizar la cabecera hacia abajo cierra el cajón
+let sheetDrag = null;
+sheetHead.addEventListener("pointerdown", ev => {
+  if (ev.target.closest("button")) return;
+  sheetDrag = { y: ev.clientY, dy: 0 };
+  sheetHead.setPointerCapture(ev.pointerId);
+  filters.classList.add("dragging");
+});
+sheetHead.addEventListener("pointermove", ev => {
+  if (!sheetDrag) return;
+  sheetDrag.dy = Math.max(0, ev.clientY - sheetDrag.y);
+  filters.style.transform = `translateY(${sheetDrag.dy}px)`;
+});
+const endSheetDrag = () => {
+  if (!sheetDrag) return;
+  const { dy } = sheetDrag; sheetDrag = null;
+  filters.classList.remove("dragging");
+  if (dy > 70) closeSheet(); else filters.style.transform = "";
+};
+sheetHead.addEventListener("pointerup", endSheetDrag);
+sheetHead.addEventListener("pointercancel", endSheetDrag);
+
+rail.addEventListener("wheel", ev => {
+  if (!desktop.matches || ev.ctrlKey) return;
+  stopGlide(true);
+  if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX)) { rail.scrollLeft += ev.deltaY; ev.preventDefault(); }
+}, { passive: false });
+/* ---------- escritorio: arrastrar la fila con el mouse ---------- */
+const shield = document.createElement("div");
+shield.id = "shield"; shield.setAttribute("aria-hidden", "true"); document.body.appendChild(shield);
+function shieldOn(id){ shield.classList.add("on"); try { shield.setPointerCapture(id); } catch (_) {} }
+function shieldOff(){ shield.classList.remove("on"); }
+const drag = { on: false, moved: false, id: 0, x: 0, left: 0, pendingX: 0, lastX: 0, lastT: 0, v: 0 };
+let dragRaf = 0, glideRaf = 0, settleTimer = 0, focusTimer = 0;
+function stopGlide(straighten){ cancelAnimationFrame(glideRaf); glideRaf = 0; clearTimeout(settleTimer); rail.classList.remove("dragging"); if (straighten) setTilt(0, true); }
+/* inclinación: mientras la fila se mueve, los diarios visibles se inclinan un poco según la velocidad
+   y al frenar rebotan a su lugar. Solo se tocan los que están en pantalla (IntersectionObserver). */
+const visibleStacks = new Set();
+const stackObserver = "IntersectionObserver" in window ? new IntersectionObserver(entries => {
+  for (const en of entries) { en.target.classList.toggle("live", en.isIntersecting); en.isIntersecting ? visibleStacks.add(en.target) : (visibleStacks.delete(en.target), en.target.style.transform = ""); }
+}, { root: rail, rootMargin: "0px 240px" }) : null;
+function observeStacks(scope){ if (!stackObserver) return; if (scope === rail) { stackObserver.disconnect(); visibleStacks.clear(); } scope.querySelectorAll(".stack").forEach(st => stackObserver.observe(st)); }
+let tilt = 0;
+function setTilt(deg, now){
+  tilt = now ? deg : tilt + (deg - tilt) * .22;
+  if (Math.abs(tilt) < .02) tilt = 0;
+  const tf = tilt ? `rotate(${tilt.toFixed(2)}deg)` : "";
+  for (const st of visibleStacks) st.style.transform = tf;
+}
+const tiltFor = v => Math.max(-2.6, Math.min(2.6, v * 1.6)); // v en px/ms
+function scheduleFocus(){
+  clearTimeout(focusTimer);
+  focusTimer = setTimeout(() => {
+    focusTimer = 0;
+    if (drag.on || glideRaf) return;
+    markFocus();
+  }, 120);
+}
+function settle(v0){
+  // al frenar, la pila más cercana al centro se acomoda con un resorte: pasa apenas de largo y rebota
+  const mid = rail.scrollLeft + rail.clientWidth / 2;
+  let best = null, dist = Infinity;
+  for (const el of rail.querySelectorAll(".pile")) { const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid); if (d < dist) { dist = d; best = el; } }
+  const done = () => { glideRaf = 0; setTilt(0, true); rail.classList.remove("dragging"); scheduleFocus(); };
+  if (!best || dist > rail.clientWidth * .3 || rail.scrollLeft <= 40) { done(); return; }
+  const target = Math.max(0, Math.min(rail.scrollWidth - rail.clientWidth, best.offsetLeft + best.offsetWidth / 2 - rail.clientWidth / 2));
+  if (reduced.matches) { rail.scrollLeft = target; done(); return; }
+  const K = 160, C = 2 * .52 * Math.sqrt(K);          // rigidez y amortiguación (ζ≈0,52: un rebote suave)
+  let x = rail.scrollLeft, v = (v0 || 0) * 1000, last = performance.now();  // v en px/s
+  const spring = now => {
+    let dt = Math.min(.05, (now - last) / 1000); last = now;
+    for (let n = 0; n < 2; n++) { const h = dt / 2; v += (-K * (x - target) - C * v) * h; x += v * h; }
+    rail.scrollLeft = x;
+    setTilt(tiltFor(v / 1000));
+    if (Math.abs(x - target) < .4 && Math.abs(v) < 6) { rail.scrollLeft = target; done(); }
+    else glideRaf = requestAnimationFrame(spring);
+  };
+  glideRaf = requestAnimationFrame(spring);
+}
+rail.addEventListener("pointerdown", ev => {
+  if (!desktop.matches || ev.pointerType !== "mouse" || ev.button !== 0) return;
+  if (ev.target.closest("input,select,textarea")) return;
+  stopGlide();
+  Object.assign(drag, { on: true, moved: false, id: ev.pointerId, x: ev.clientX, left: rail.scrollLeft, pendingX: ev.clientX, lastX: ev.clientX, lastT: performance.now(), v: 0 });
+});
+function applyDragPosition(now){
+  dragRaf = 0;
+  if (!drag.on) return;
+  const x = drag.pendingX, dx = x - drag.x;
+  if (!drag.moved) {
+    if (Math.abs(dx) < 6) return;
+    drag.moved = true;
+    rail.classList.add("dragging");
+    shieldOn(drag.id);
+    window.getSelection()?.removeAllRanges();
+  }
+  rail.scrollLeft = drag.left - dx;
+  const dt = now - drag.lastT, movedX = drag.lastX - x;
+  if (dt > 0 && movedX !== 0) drag.v = .8 * (movedX / dt) + .2 * drag.v;
+  if (movedX !== 0) { drag.lastX = x; drag.lastT = now; }
+  if (!reduced.matches) setTilt(tiltFor(drag.v));
+}
+window.addEventListener("pointermove", ev => {
+  if (!drag.on || ev.pointerId !== drag.id) return;
+  if (ev.pointerType === "mouse" && ev.buttons === 0) { endDrag(ev); return; }
+  drag.pendingX = ev.clientX;
+  if (!dragRaf) dragRaf = requestAnimationFrame(applyDragPosition);
+});
+function endDrag(ev){
+  if (!drag.on || ev.pointerId !== drag.id) return;
+  if (Number.isFinite(ev.clientX)) drag.pendingX = ev.clientX;
+  if (dragRaf) cancelAnimationFrame(dragRaf);
+  dragRaf = 0;
+  applyDragPosition(performance.now());
+  drag.on = false;
+  shieldOff();
+  if (!drag.moved) { scheduleFocus(); return; }
+  // el clic que sigue a un arrastre no abre enlaces ni trae diarios al frente
+  const swallow = e => { e.stopPropagation(); e.preventDefault(); };
+  window.addEventListener("click", swallow, { capture: true, once: true });
+  setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 0);
+  // inercia: la velocidad decae con el tiempo real (≈1 s), no por cuadro
+  let v = performance.now() - drag.lastT > 80 || reduced.matches ? 0 : Math.max(-3, Math.min(3, drag.v));
+  const t0 = performance.now(), dur = 900;
+  let last = t0;
+  const glide = now => {
+    const dt = Math.min(100, now - last); last = now;
+    v *= Math.pow(.94, dt / 16);
+    rail.scrollLeft += v * dt;
+    setTilt(tiltFor(v));
+    if (Math.abs(v) > .35 && now - t0 < dur) glideRaf = requestAnimationFrame(glide);
+    else { glideRaf = 0; settle(v); }
+  };
+  glideRaf = requestAnimationFrame(glide);
+}
+window.addEventListener("pointerup", endDrag);
+shield.addEventListener("lostpointercapture", ev => { if (drag.on) endDrag(ev); });
+window.addEventListener("pointercancel", endDrag);
+window.addEventListener("blur", () => {
+  if (!drag.on) return;
+  drag.on = false;
+  if (dragRaf) cancelAnimationFrame(dragRaf);
+  dragRaf = 0;
+  shieldOff();
+  rail.classList.remove("dragging");
+  setTilt(0, true);
+  scheduleFocus();
+});
+rail.addEventListener("dragstart", ev => { if (desktop.matches) ev.preventDefault(); });
+
+function step(dir){
+  const items = [...rail.querySelectorAll(".intro,.pile,.empty")];
+  const mid = desktop.matches ? rail.scrollLeft + rail.clientWidth / 2 : window.scrollY + window.innerHeight / 2;
+  const center = el => desktop.matches ? el.offsetLeft + el.offsetWidth / 2 : el.offsetTop + el.offsetHeight / 2;
+  let i = items.findIndex(el => center(el) > mid + 4);
+  if (dir < 0) { i = items.length - 1 - [...items].reverse().findIndex(el => center(el) < mid - 4); }
+  if (i < 0 || i >= items.length) return;
+  items[i].scrollIntoView({ behavior: reduced.matches ? "auto" : "smooth", inline: "center", block: desktop.matches ? "nearest" : "center" });
+}
+document.addEventListener("keydown", ev => {
+  if (ev.target.closest && ev.target.closest("input,select,textarea,.bar.open")) return;
+  if (ev.key === "ArrowRight") { step(1); ev.preventDefault(); }
+  else if (ev.key === "ArrowLeft") { step(-1); ev.preventDefault(); }
+});
+
+/* ---------- la aguja sigue el centro de la pantalla: entre dos pilas, interpola entre sus fechas ---------- */
+let yrRaf = 0;
+function markYear(){
+  yrRaf = 0;
+  const piles = rail.querySelectorAll(".pile");
+  if (piles.length) {
+    const horiz = desktop.matches;
+    const mid = horiz ? rail.scrollLeft + rail.clientWidth / 2 : window.scrollY + window.innerHeight / 2;
+    const c = el => horiz ? el.offsetLeft + el.offsetWidth / 2 : el.offsetTop + el.offsetHeight / 2;
+    let lo = 0, hi = piles.length;             // primera pila cuyo centro pasó el medio (están en orden)
+    while (lo < hi) { const m = (lo + hi) >> 1; if (c(piles[m]) <= mid) lo = m + 1; else hi = m; }
+    const a = Math.max(0, lo - 1), b = Math.min(piles.length - 1, lo);
+    const ea = EV[piles[a].dataset.id], eb = EV[piles[b].dataset.id];
+    const f = a === b ? 0 : Math.max(0, Math.min(1, (mid - c(piles[a])) / (c(piles[b]) - c(piles[a]))));
+    updateTimeline(ea._x + (eb._x - ea._x) * f, f < .5 ? ea : eb);
+  }
+  if (!drag.on && !glideRaf) scheduleFocus();
+}
+/* la pila más cercana al centro de la pantalla queda "en foco": su titular se resalta */
+function markFocus(){
+  const cx = innerWidth / 2, cy = (innerHeight - 80) / 2;
+  let best = null, dist = Infinity;
+  for (const p of rail.querySelectorAll(".pile")) {
+    const r = p.getBoundingClientRect();
+    const d = desktop.matches ? Math.abs(r.left + r.width / 2 - cx) : Math.abs(r.top + r.height / 2 - cy);
+    if (d < dist) { dist = d; best = p; }
+  }
+  if (dist > (desktop.matches ? innerWidth * .35 : innerHeight * .4)) best = null;
+  for (const p of rail.querySelectorAll(".pile.focus")) if (p !== best) p.classList.remove("focus");
+  if (best && !best.classList.contains("focus")) { strokes(best); void best.offsetWidth; best.classList.add("focus"); }
+}
+function strokes(pile){
+  const head = pile.querySelector(".front .head"), mk = head && head.querySelector(".mk");
+  if (!mk) return;
+  head.querySelectorAll(".stroke").forEach(n => n.remove());
+  const range = document.createRange(); range.selectNodeContents(mk);
+  const hb = head.getBoundingClientRect();
+  const lines = [];
+  for (const r of range.getClientRects()) {
+    if (r.width < 2) continue;
+    const l = lines.find(x => Math.abs(x.top - r.top) < r.height / 2);
+    if (l) { l.left = Math.min(l.left, r.left); l.right = Math.max(l.right, r.right); }
+    else lines.push({ top: r.top, left: r.left, right: r.right, h: r.height });
+  }
+  let h = 2166136261; for (const ch of mk.textContent) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  const rnd = () => (h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0, h / 4294967296);
+  lines.forEach((l, i) => {
+    const el = document.createElement("i");
+    el.className = "stroke";
+    const lh = l.h, padL = lh * (.04 + rnd() * .12), padR = lh * (.06 + rnd() * .18);
+    const ht = lh * (.5 + rnd() * .14), top = l.top - hb.top + lh * (.36 + rnd() * .1);
+    const rot = rnd() < .35 ? (rnd() - .5) * .5 : (rnd() - .5) * 2.4;
+    const rad = () => (2 + rnd() * 7).toFixed(1) + "px";
+    el.style.cssText = `left:${(l.left - hb.left - padL).toFixed(1)}px;top:${top.toFixed(1)}px;width:${(l.right - l.left + padL + padR).toFixed(1)}px;height:${ht.toFixed(1)}px;` +
+      `border-radius:${rad()} ${rad()} ${rad()} ${rad()} / ${rad()} ${rad()} ${rad()} ${rad()};--r:${rot.toFixed(2)}deg;--k:${((rnd() - .5) * 6).toFixed(1)}deg;--d:${(i * .22).toFixed(2)}s`;
+    head.insertBefore(el, mk);
+  });
+}
+const track = () => { if (!yrRaf) yrRaf = requestAnimationFrame(markYear); };
+rail.addEventListener("scroll", track, { passive: true });
+window.addEventListener("scroll", track, { passive: true });
+const restroke = () => { rail.querySelectorAll(".pile.focus").forEach(p => p.classList.remove("focus")); track(); };
+window.addEventListener("resize", restroke);
+document.fonts?.ready.then(restroke);
+
+/* ---------- arranque ---------- */
+render();
+markYear();
+{
+  const h = location.hash.replace(/^#/, "");
+  if (h.startsWith("e-")) {
+    const go = () => document.getElementById(h)?.scrollIntoView({ inline: "center", block: "center" });
+    go(); requestAnimationFrame(() => requestAnimationFrame(go)); setTimeout(go, 400);
+  }
+}
+window.addEventListener("hashchange", () => {
+  const h = location.hash.replace(/^#/, "");
+  if (h.startsWith("tema-") && TOPICS[h.slice(5)] && state.tp !== h.slice(5)) setFilter({ tp: h.slice(5) });
+  else if (h.startsWith("e-")) document.getElementById(h)?.scrollIntoView({ behavior: "smooth", inline: "center", block: "center" });
+});
+</script>
