@@ -156,6 +156,9 @@ i.fold{top:auto;height:4.75em;background:linear-gradient(to bottom,rgba(20,20,19
 /* en el celular, portada, años y cierre usan el mismo ancho que los diarios (32,5em de la pila) */
 .rail{--col:min(520px,calc((100vw - 40px) * 32.5 / 34.5))}
 .intro{width:var(--col)}
+/* en pantallas angostas la fecha se abrevia para quedar a la derecha, en el mismo renglón */
+.intro .ed .d-short{display:none}
+@media (max-width:560px){ .intro .ed .d-long{display:none} .intro .ed .d-short{display:inline} }
 /* entrada de la portada (solo la primera vez): cada bloque sube apenas y aparece, uno tras otro */
 .intro.enter > *{animation:hero-in .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i, 0) * 70ms)}
 .intro.enter > :nth-child(2){--i:1} .intro.enter > :nth-child(3){--i:2} .intro.enter > :nth-child(4){--i:3}
@@ -381,6 +384,11 @@ function todayAsuncion(){
   try { return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Asuncion", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
   catch (_) { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`; }
 }
+// "jueves 5/11/2026": la fecha corta de la portada en pantallas angostas
+function shortDay(d){
+  const [y, m, dd] = d.split("-").map(Number);
+  return `${DAYS[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()]} ${dd}/${m}/${y}`;
+}
 function longDate(d){
   if (!d) return "";
   const [y,m,dd] = d.split("-").map(Number);
@@ -534,7 +542,7 @@ function SOCIAL(){
 }
 function introHTML(enter){
   return `<section class="intro${enter ? " enter" : ""}" id="inicio">
-    <div class="ed"><span>Edición especial</span><span>Asunción, ${esc(longDate(todayAsuncion()))}</span></div>
+    <div class="ed"><span>Edición especial</span><time datetime="${todayAsuncion()}"><span class="d-long">Asunción, ${esc(longDate(todayAsuncion()))}</span><span class="d-short">Asu, ${esc(shortDay(todayAsuncion()))}</span></time></div>
     <h1><span class="mk">El caso ueno</span></h1>
     <p class="lede">Cronología visual de lo publicado por medios, legisladores y autoridades sobre ueno bank, desde sus orígenes hasta su resolución. <span class="by">Por Ricardo Ovelar.</span></p>
     <div class="intro-act">
