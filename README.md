@@ -51,7 +51,7 @@ python3 -m http.server 8765 --directory dist
 
 ### Publicación
 
-La página se publica en Cloudflare (Workers con archivos estáticos) según [wrangler.jsonc](wrangler.jsonc). `npx wrangler deploy` construye la página y sube `dist/` (salvo `artifact.html`).
+La página se publica en Cloudflare (Workers con archivos estáticos) según [wrangler.jsonc](wrangler.jsonc). Cada cambio en `main` que toque los datos, la página o los scripts se publica solo con el flujo [Publicar](.github/workflows/deploy.yml): construye la página (lo que también valida los datos) y sube `dist/` (salvo `artifact.html`). Si la validación falla, no se publica nada. También se puede publicar a mano con `npx wrangler deploy`.
 
 ## Usar los datos
 
