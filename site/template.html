@@ -628,7 +628,7 @@ function rerenderPile(id, focusSel, from){
 }
 
 /* ---------- cambio de diario: la pila como un mazo en profundidad ----------
-   1) el diario de adelante se achica, retrocede y se desvanece; 2) el elegido sale de su lugar y crece hasta el frente,
+   1) el diario de adelante sale hacia quien mira (baja, crece apenas y se desvanece); 2) el elegido sale de su lugar y crece hasta el frente,
    asomando de arriba hacia abajo como si lo sacaran de la pila; 3) los demás se acomodan y el anterior aparece al fondo.
    Se dibuja la pila nueva y cada papel se anima desde donde estaba (FLIP); las cajas se miden con offset*, sin rotaciones. */
 const SHUFFLE_MS = 720;
@@ -659,12 +659,12 @@ function shuffle(pile, before, oldSrc){
     st.insertBefore(g, ahead || null); return g;
   };
   const IN = 210, DUR = SHUFFLE_MS - IN;
-  // 1) el de adelante retrocede
+  // 1) el de adelante sale hacia quien mira: baja, crece un poco y se desvanece (al revés que los de atrás, que suben y se achican)
   if (old && old.front) {
     const g = ghost(old, 3);
-    g.style.transformOrigin = "50% 0";
-    g.animate([{ transform: "translateY(0) scale(1) rotate(-.3deg)", opacity: 1 }, { opacity: 0, offset: .85 }, { transform: "translateY(-1.2em) scale(.9) rotate(-.3deg)", opacity: 0 }],
-      { duration: 260, easing: "cubic-bezier(.33,0,.67,1)", fill: "forwards" }).finished.then(() => g.remove(), () => {});
+    g.style.transformOrigin = "50% 50%";
+    g.animate([{ transform: "translateY(0) scale(1) rotate(-.3deg)", opacity: 1 }, { opacity: 0, offset: .85 }, { transform: "translateY(2.4em) scale(1.06) rotate(.4deg)", opacity: 0 }],
+      { duration: 280, easing: "cubic-bezier(.4,0,.7,.5)", fill: "forwards" }).finished.then(() => g.remove(), () => {});
   }
   // 2) el elegido pasa al frente
   const rest = "translate(0px,0px) scale(1) rotate(-.3deg)", em = parseFloat(getComputedStyle(nf).fontSize);
