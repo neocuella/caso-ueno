@@ -123,9 +123,37 @@ const HEAD = [
 ].filter(Boolean).join("\n");
 
 // index.html: documento completo para cualquier hosting estático (GitHub Pages, Netlify, etc.).
-fs.writeFileSync(path.join(root, "dist", "index.html"),
+const html =
   `<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n${HEAD}\n` +
-  `<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>\n</head>\n<body>\n${page}\n</body>\n</html>\n`);
+  `<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>\n</head>\n<body>\n${page}\n</body>\n</html>\n`;
+fs.writeFileSync(path.join(root, "dist", "index.html"), html);
+// cabeceras de seguridad para Cloudflare (Workers con archivos estáticos lee dist/_headers).
+// La página solo carga archivos propios; el script en línea se autoriza por su hash, que se recalcula en cada build.
+const scriptHashes = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+  .map(m => `'sha256-${require("crypto").createHash("sha256").update(m[1]).digest("base64")}'`);
+const CSP = [
+  "default-src 'none'",
+  `script-src ${scriptHashes.join(" ")}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "manifest-src 'self'",
+  "base-uri 'none'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "upgrade-insecure-requests"
+].join("; ");
+fs.writeFileSync(path.join(root, "dist", "_headers"), [
+  "/*",
+  `  Content-Security-Policy: ${CSP}`,
+  "  X-Content-Type-Options: nosniff",
+  "  Referrer-Policy: strict-origin-when-cross-origin",
+  "  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+  "  X-Frame-Options: DENY",
+  "  Cross-Origin-Opener-Policy: same-origin",
+  ""
+].join("\n"));
 // al publicar dist/ en Cloudflare, el fragmento artifact.html no se sube (solo sirve para Artifacts)
 fs.writeFileSync(path.join(root, "dist", ".assetsignore"), "artifact.html\n");
 const assets = path.join(root, "site", "assets");

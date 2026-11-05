@@ -35,5 +35,6 @@ scripts/migrate/
 scripts/add-source.js
 scripts/lede.js
 
-# Cloudflare (estado local de wrangler)
+# Cloudflare (estado local de wrangler y caché del CLI cf)
 .wrangler/
+.cloudflare/
