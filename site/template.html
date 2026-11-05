@@ -1,19 +1,25 @@
 <title>El caso ueno</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preload" href="assets/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/GeistSerif-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/Newsreader-latin.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-/* Tipografías Geist (Vercel), servidas desde assets/ — licencia SIL OFL 1.1, ver assets/Geist-OFL.txt.
-   Geist es variable (pesos 100–900). Geist Serif tiene un solo peso (Regular). */
+/* Tipografías servidas desde assets/, sin servicios externos (licencia SIL OFL 1.1, ver assets/*-OFL.txt):
+   Geist (Vercel) para el texto y la interfaz; Newsreader para titulares, cabeceras y títulos.
+   Las dos son variables; Newsreader se divide por alfabeto (latin, latin-ext) y la cursiva solo se baja si se usa. */
 @font-face{font-family:"Geist";src:url(assets/Geist-Variable.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
-@font-face{font-family:"Geist Serif";src:url(assets/GeistSerif-Variable.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Newsreader";src:url(assets/Newsreader-latin.woff2) format("woff2");font-weight:400 800;font-style:normal;font-display:swap;
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Newsreader";src:url(assets/Newsreader-latin-ext.woff2) format("woff2");font-weight:400 800;font-style:normal;font-display:swap;
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Newsreader";src:url(assets/Newsreader-Italic-latin.woff2) format("woff2");font-weight:400 800;font-style:italic;font-display:swap;
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 /* Layout: un puesto de diarios. Cada fuente es un diario sábana doblado; cada hecho, una pila.
    Escritorio: fila horizontal con snap. Móvil (<900px): columna vertical. Filtros en una píldora fija abajo.
    Tema único claro a propósito: es papel sobre blanco. */
 :root{
   --bg:#FFFFFF; --ink:#141413; --ink-2:#2C333D; --muted:#5B6370; --line:#E3E6EA; --link:#1F2933;
   --t-banco:#B5245A; --t-gobierno:#1B6EC2; --t-congreso:#7E3BB0; --t-fondos:#2F7D32; --t-supervision:#C2550A;
-  --f-serif:"Geist Serif",Georgia,"Times New Roman",serif;
+  --f-serif:"Newsreader",Georgia,"Times New Roman",serif;
   --f-sans:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
   --noise:none; --hito:#C8352A;
   color-scheme:light;
@@ -22,9 +28,7 @@
 html{height:100%}
 /* en el celular el cuerpo crece con el contenido: así la línea de tiempo queda pegada arriba durante todo el recorrido */
 body{min-height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-sans);-webkit-font-smoothing:antialiased;
-  /* Geist Serif no tiene negritas: que el navegador no las imite (sí puede inclinarla para la cursiva) */
-  font-synthesis:style}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-sans);-webkit-font-smoothing:antialiased}
 a{color:var(--link)}
 button,select,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ink);outline-offset:3px}
