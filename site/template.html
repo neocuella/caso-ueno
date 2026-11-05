@@ -602,7 +602,7 @@ function heroStrokes(delay){
   if (!mk) return;
   document.fonts.ready.then(() => {
     if (!h1.isConnected) return;
-    drawStrokes(h1, mk, { lift: .12, tilt: 1.1 });
+    drawStrokes(h1, mk, { lift: .24, tilt: 1.1 });
     void h1.offsetWidth;
     setTimeout(() => h1.parentElement.classList.add("lit"), delay);
   });
