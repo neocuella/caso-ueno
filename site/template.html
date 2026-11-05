@@ -102,16 +102,22 @@ i.fold{top:auto;height:4.75em;background:linear-gradient(to bottom,rgba(20,20,19
 .ln{display:block;height:.28em;margin:0 0 .3em;border-radius:1px;background:#8F8A80;opacity:.42;break-inside:avoid}
 
 /* diarios de atrás: solo la cabecera asoma */
-.back{all:unset;position:absolute;display:block;box-sizing:border-box;cursor:pointer;transform:rotate(var(--r));transform-origin:50% 100%;transition:transform .25s ease}
+.back{all:unset;position:absolute;bottom:.75em;display:block;box-sizing:border-box;cursor:pointer;transform:rotate(var(--r));transform-origin:50% 100%;transition:transform .25s ease}
 .back:hover{transform:rotate(var(--r)) translateY(-.4em)}
 .back:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
-.back .sheet{height:5.625em;padding:.4em 1.25em 0;box-shadow:0 -3px 10px -2px rgba(20,20,19,.30),2px -1px 3px -1px rgba(20,20,19,.18)}
+/* cada diario de atrás es un diario completo (cabecera, titular y copete) tapado por los de adelante: solo asoma la cabecera,
+   pero cuando el de adelante se va, el que queda detrás ya está entero */
+.back .sheet{box-sizing:border-box;height:100%;display:flex;flex-direction:column;gap:.5em;padding:.4em 1.25em 0;box-shadow:0 -3px 10px -2px rgba(20,20,19,.30),2px -1px 3px -1px rgba(20,20,19,.18)}
 .back .dateline{display:none}
-.back .mast{margin-top:0;padding-top:0;border-bottom-width:2px}
+.back .mast{margin-top:0;padding-top:0;border-bottom-width:2px;flex:none}
+.back .sheet-back.sm{bottom:auto;height:6.2em}
+/* el texto empieza debajo de la franja que asoma (≈4,4em hasta el diario de adelante, +0,4em al pasar el mouse) */
+.back .head{margin-top:2em}
 .front{transform:rotate(-.3deg);animation:rise .35s ease}
 .front.flip,.ghost{animation:none}
 .ghost{margin:0;pointer-events:none}
-@keyframes rise{from{transform:rotate(-.3deg) translateY(.6em);opacity:.4}to{transform:rotate(-.3deg);opacity:1}}
+/* sin transparencia: detrás hay diarios completos que se verían a través */
+@keyframes rise{from{transform:rotate(-.3deg) translateY(.6em)}to{transform:rotate(-.3deg)}}
 
 /* hito: un clip rojo sujeta el diario de adelante */
 .clip{position:absolute;z-index:3;left:1em;top:-2.5em;width:1.75em;height:5em;transform:rotate(-6deg);pointer-events:none;overflow:visible;
@@ -471,10 +477,12 @@ function pileHTML(e){
   const slots = SLOTS.slice(3 - backs.length);
   const backHTML = backs.slice().reverse().map((si, k) => {
     const b = S[si], bm = mast(b.o), sl = slots[k];
+    const bHead = b.h ? `<div class="head" style="font-size:${headSize(b.h.length)}em">${esc(b.h)}</div>` : `<div class="head none">Titular no registrado</div>`;
+    const bBody = b.l ? `<div class="body lede">${esc(b.l)}</div>` : `<div class="body">${greek(e.id + b.u)}</div>`;
     return `<button type="button" class="paper back" data-pick="${si}" aria-label="Traer al frente: ${esc(bm.name)}"
       style="left:${sl.l}em;width:${sl.w}%;top:${(k * 3.3 + .6).toFixed(2)}em;--r:${sl.r}deg;--tint:${tint(bm.name)}">
-      ${BACKSHEET("sm", shapeVars(e.id, si, false))}<div class="sheet">${LAYERS}
-      <div class="mast" style="font-size:${mastSize(bm.name, false)}em">${esc(bm.name)}</div></div></button>`;
+      ${BACKSHEET("sm", shapeVars(e.id, si, false))}<div class="sheet">${LAYERS}<i class="fold"></i>
+      <div class="mast" style="font-size:${mastSize(bm.name, false)}em">${esc(bm.name)}</div>${bHead}${bBody}</div></button>`;
   }).join("");
   const head = s.h
     ? `<div class="head" style="font-size:${headSize(s.h.length)}em"><span class="mk">${esc(s.h)}</span></div>`
@@ -671,7 +679,8 @@ function shuffle(pile, before, oldSrc){
   nf.classList.add("flip"); nf.style.zIndex = 1;
   if (was && !was.front) {
     // al salir solo se ve la franja que asomaba (hasta el papel que tenía delante); el resto se descubre al avanzar
-    const strip = Math.min(was.h, ...[...before.values()].filter(o => o.y > was.y + 1).map(o => o.y - was.y));
+    // (el de adelante se va, así que no cuenta: el que estaba justo detrás sale entero)
+    const strip = Math.min(was.h, ...[...before.values()].filter(o => !o.front && o.y > was.y + 1).map(o => o.y - was.y));
     const shown = Math.max(0, nf.offsetHeight - strip * nf.offsetWidth / was.w);
     const open = `inset(-6em -6em ${(-8 * em).toFixed(1)}px -6em)`;
     const timing = { duration: DUR, delay: IN, easing: ease };
