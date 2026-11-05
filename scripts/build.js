@@ -79,8 +79,9 @@ fs.writeFileSync(path.join(root, "dist", "artifact.html"), page);
 const SITE = (pkg.homepage || "").replace(/\/$/, "");
 const attr = s => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 const TITLE = "El caso ueno: cronología de lo publicado sobre ueno bank";
-const DESC = `Cronología visual de lo publicado sobre ueno bank, desde sus orígenes hasta su resolución por el BCP: ${EVENTS.length} hechos, ${sources.length} fuentes y datos abiertos.`;
-const OG_DESC = "Cronología visual de lo publicado por medios, legisladores y autoridades sobre ueno bank, desde sus orígenes hasta su resolución. Cada diario es una publicación real, con su enlace.";
+// descripción para buscadores y redes: 125 caracteres como máximo, sin cifras que cambian con cada carga de datos
+const DESC = "Cronología visual de lo publicado sobre ueno bank, desde sus orígenes hasta su resolución por el BCP. Datos abiertos.";
+const OG_DESC = DESC;
 const OG_IMG = `${SITE}/assets/og.png`;
 const ldDataset = {
   "@context": "https://schema.org", "@type": "Dataset",
