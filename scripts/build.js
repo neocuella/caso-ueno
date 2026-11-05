@@ -23,7 +23,6 @@ const threads = readTable(D("threads.csv")).records;
 const topics = readTable(D("topics.csv")).records;
 const events = readTable(D("events.csv")).records;
 const sources = readTable(D("sources.csv")).records;
-const deposits = readTable(D("series/deposits.csv")).records;
 const people = fs.existsSync(D("people.csv")) ? readTable(D("people.csv")).records : [];
 const mentions = fs.existsSync(D("mentions.csv")) ? readTable(D("mentions.csv")).records : [];
 // personas nombradas por publicación; "~" = nombrada solo en el texto de la nota, no en titular ni copete
@@ -57,7 +56,6 @@ const EVENTS = events.map(e => {
 const usedPeople = new Set(mentions.map(m => m.person));
 // nombre visible y otras formas en que lo escriben los medios (para la búsqueda)
 const PEOPLE = Object.fromEntries(people.filter(p => usedPeople.has(p.id)).map(p => [p.id, [p.name, ...p.aliases.split(";").filter(Boolean)]]));
-const DEPOSITS = deposits.map(r => [r.period, Number(r.value)]);
 const allDates = [...events.map(e => e.date), ...sources.map(s => s.published)].filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
 // updated: día en que se generó la página (hora de Asunción), o sea cuándo se actualizó el archivo;
 // latest: la publicación más reciente que incluye
@@ -68,8 +66,7 @@ const js = (name, v) => `const ${name} = ${JSON.stringify(v)};`;
 const data = [
   "/* Datos generados por scripts/build.js desde data/*.csv. No editar a mano. */",
   js("META", META), js("THREADS", THREADS), js("TOPICS", TOPICS), js("PEOPLE", PEOPLE),
-  "const EVENTS = [\n" + EVENTS.map(e => JSON.stringify(e)).join(",\n") + "\n];",
-  js("DEPOSITS", DEPOSITS)
+  "const EVENTS = [\n" + EVENTS.map(e => JSON.stringify(e)).join(",\n") + "\n];"
 ].join("\n");
 
 const tpl = fs.readFileSync(path.join(root, "site", "template.html"), "utf8");

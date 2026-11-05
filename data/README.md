@@ -12,8 +12,6 @@ data/
 ├── topics.csv          temas que agrupan hechos a lo largo del tiempo
 ├── people.csv          personas que nombran las publicaciones
 ├── mentions.csv        qué persona nombra cada publicación y dónde
-├── series/
-│   └── deposits.csv    serie del gráfico de depósitos estatales
 └── datapackage.json    descriptor del esquema
 ```
 
@@ -37,7 +35,6 @@ Las decisiones de curaduría que sí se reflejan en la página son: qué publica
 | `summary` | sí | hasta 700 caracteres | Descripción interna, con atribución. **No se publica.** |
 | `note` | no | hasta 300 caracteres | Nota interna: discrepancias entre fuentes o fechas inciertas. **No se publica.** |
 | `revealed` | no | `AAAA-MM-DD` | Opcional, de referencia: fecha de la publicación que reveló el hecho. La página calcula la ubicación de cada entrada a partir de `published` en `sources.csv`. |
-| `chart` | no | `deposits` | Vincula la entrada con una serie de `series/`. La página actual no la grafica. |
 
 ## sources.csv
 

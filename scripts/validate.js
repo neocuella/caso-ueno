@@ -26,7 +26,6 @@ function validate(root) {
   const topics = load("topics.csv", ["id", "label", "description"]);
   const events = load("events.csv", EVENT_COLUMNS);
   const sources = load("sources.csv", SOURCE_COLUMNS);
-  const series = fs.existsSync(D("series/deposits.csv")) ? load("series/deposits.csv", ["period", "value", "unit", "source_url", "note"]) : [];
 
   const threadIds = new Set(), topicIds = new Set();
   for (const [list, set, file] of [[threads, threadIds, "threads.csv"], [topics, topicIds, "topics.csv"]]) {
@@ -63,7 +62,6 @@ function validate(root) {
     }
     if (e.revealed && !validDate(e.revealed)) errors.push(`${at}: revealed “${e.revealed}” no es una fecha válida`);
     if (e.revealed && e.revealed < e.date) errors.push(`${at}: revealed no puede ser anterior a date`);
-    if (e.chart && e.chart !== "deposits") errors.push(`${at}: chart “${e.chart}” no existe (solo “deposits”)`);
   }
   for (const t of topicIds) if (!usedTopics.has(t)) warnings.push(`topics.csv: el tema “${t}” no tiene entradas`);
 
@@ -102,13 +100,6 @@ function validate(root) {
     }
   }
   for (const id of eventIds) if (!perEvent[id]) errors.push(`events.csv: la entrada “${id}” no tiene ninguna fuente en sources.csv`);
-
-  for (const r of series) {
-    const at = `series/deposits.csv:${r._line}`;
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(r.period)) errors.push(`${at}: period debe ser AAAA-MM`);
-    if (!/^\d+(\.\d+)?$/.test(r.value)) errors.push(`${at}: value debe ser numérico (punto decimal)`);
-    if (!RE.url.test(r.source_url)) errors.push(`${at}: source_url inválida`);
-  }
 
   // cada publicación va en una sola entrada (regla 10 de CONTRIBUTING.md)
   for (const [url, ids] of Object.entries(urlEvents))

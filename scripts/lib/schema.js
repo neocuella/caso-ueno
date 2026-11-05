@@ -1,7 +1,7 @@
 // Definición compartida de columnas, valores permitidos y reglas de formato.
 "use strict";
 
-const EVENT_COLUMNS = ["id", "date", "order", "thread", "topics", "milestone", "title", "summary", "note", "revealed", "chart"];
+const EVENT_COLUMNS = ["id", "date", "order", "thread", "topics", "milestone", "title", "summary", "note", "revealed"];
 const SOURCE_COLUMNS = ["event_id", "url", "outlet", "type", "headline", "lede", "published", "archive_url", "last_checked", "notes"];
 
 const SOURCE_TYPES = ["article", "social", "video", "document"];

@@ -16,7 +16,6 @@ data/                 los datos, en CSV (la fuente de verdad)
   mentions.csv        2.295 menciones: qué persona nombra cada publicación (para la búsqueda)
   threads.csv         5 hilos (actores)
   topics.csv          10 temas
-  series/deposits.csv serie de depósitos estatales en ueno
   datapackage.json    esquema en formato Frictionless Data
   README.md           descripción de cada columna
 site/template.html    la página interactiva, sin datos
