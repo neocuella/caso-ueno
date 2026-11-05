@@ -95,7 +95,7 @@ i.fold{top:auto;height:4.75em;background:linear-gradient(to bottom,rgba(20,20,19
 .stroke{position:absolute;z-index:0;pointer-events:none;mix-blend-mode:multiply;
   background:linear-gradient(100deg,rgba(255,216,20,.5) 0%,rgba(255,206,0,.66) 12%,rgba(255,210,0,.6) 55%,rgba(255,200,0,.7) 92%,rgba(255,216,20,.45) 100%);
   transform-origin:0 50%;transform:rotate(var(--r)) skewX(var(--k)) scaleX(0);transition:transform .5s cubic-bezier(.35,.6,.2,1) var(--d)}
-.pile.focus .stroke{transform:rotate(var(--r)) skewX(var(--k)) scaleX(1)}
+.pile.focus .stroke,.intro.lit .stroke{transform:rotate(var(--r)) skewX(var(--k)) scaleX(1)}
 .head-a{color:inherit;text-decoration:none;text-decoration-thickness:1px;text-underline-offset:.12em}
 .head-a:hover{text-decoration-line:underline}
 .head{font-family:var(--f-serif);font-weight:700;line-height:1.03;letter-spacing:-.02em;text-wrap:balance;padding-top:.15em;overflow-wrap:break-word}
@@ -156,8 +156,13 @@ i.fold{top:auto;height:4.75em;background:linear-gradient(to bottom,rgba(20,20,19
 /* en el celular, portada, años y cierre usan el mismo ancho que los diarios (32,5em de la pila) */
 .rail{--col:min(520px,calc((100vw - 40px) * 32.5 / 34.5))}
 .intro{width:var(--col)}
+/* entrada de la portada (solo la primera vez): cada bloque sube apenas y aparece, uno tras otro */
+.intro.enter > *{animation:hero-in .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i, 0) * 70ms)}
+.intro.enter > :nth-child(2){--i:1} .intro.enter > :nth-child(3){--i:2} .intro.enter > :nth-child(4){--i:3}
+.intro.enter > :nth-child(5){--i:4} .intro.enter > :nth-child(6){--i:5}
+@keyframes hero-in{from{opacity:0;transform:translateY(12px)}}
 .intro .ed{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:3px double var(--ink);padding-bottom:8px;margin-bottom:26px}
-.intro h1{margin:0 0 16px;font-family:var(--f-serif);font-weight:800;font-size:clamp(52px,9vw,84px);line-height:.92;letter-spacing:-.03em;border-bottom:1px solid var(--ink);padding-bottom:14px}
+.intro h1{position:relative;margin:0 0 16px;font-family:var(--f-serif);font-weight:800;font-size:clamp(52px,9vw,84px);line-height:.92;letter-spacing:-.03em;border-bottom:1px solid var(--ink);padding-bottom:14px}
 .intro .lede .by{white-space:nowrap;color:var(--ink);font-style:italic}
 .intro .lede{margin:0 0 16px;font-family:var(--f-serif);font-size:19px;line-height:1.4;color:var(--ink-2);text-wrap:pretty}
 .intro-act{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 20px}
@@ -326,7 +331,7 @@ html:has(.about[open]){overflow:hidden}
 }
 @media (min-width:900px) and (max-height:820px){ .pile{--fs:14px} }
 @media (min-width:900px) and (max-height:680px){ .pile{--fs:12px} }
-@media (prefers-reduced-motion:reduce){ .about[open],.about[open]::backdrop{animation:none} .front{animation:none} .back{transition:none} .stroke{transition:none} }
+@media (prefers-reduced-motion:reduce){ .intro.enter > *{animation:none} .about[open],.about[open]::backdrop{animation:none} .front{animation:none} .back{transition:none} .stroke{transition:none} }
 </style>
 
 <nav class="tl" id="tl" aria-label="Línea de tiempo" hidden>
@@ -526,10 +531,10 @@ const X_LINK = () => socialLink(`https://x.com/${X_HANDLE}`, `@${X_HANDLE} en X`
 function SOCIAL(){
   return X_LINK() + (META.repo ? socialLink(META.repo, "Código y datos en GitHub", ICON_GH) : "");
 }
-function introHTML(){
-  return `<section class="intro" id="inicio">
+function introHTML(enter){
+  return `<section class="intro${enter ? " enter" : ""}" id="inicio">
     <div class="ed"><span>Edición especial</span><span>Asunción, ${esc(longDate(todayAsuncion()))}</span></div>
-    <h1>El caso ueno</h1>
+    <h1><span class="mk">El caso ueno</span></h1>
     <p class="lede">Cronología visual de lo publicado por medios, legisladores y autoridades sobre ueno bank, desde sus orígenes hasta su resolución. <span class="by">Por Ricardo Ovelar.</span></p>
     <div class="intro-act">
       <button class="about-open" type="button" data-about aria-haspopup="dialog">Sobre este proyecto</button>
@@ -590,10 +595,22 @@ function frontForQuery(list){
     if (i > 0) { const N = ORDER[e.id].length; DECK[e.id] = [...Array(N).keys()].map(k => (k + i) % N); SEARCH_FRONT.add(e.id); }
   }
 }
+let heroShown = false;
+/* resaltador del título de la portada: los mismos trazos que los titulares, una vez cargadas las tipografías */
+function heroStrokes(delay){
+  const h1 = rail.querySelector(".intro h1"), mk = h1 && h1.querySelector(".mk");
+  if (!mk) return;
+  document.fonts.ready.then(() => {
+    if (!h1.isConnected) return;
+    drawStrokes(h1, mk);
+    void h1.offsetWidth;
+    setTimeout(() => h1.parentElement.classList.add("lit"), delay);
+  });
+}
 function render(){
   const list = visible();
   frontForQuery(list);
-  let html = introHTML();
+  let html = introHTML(!heroShown);
   const groups = [];
   for (const e of list) { const y = e.p.slice(0, 4); if (!groups.length || groups[groups.length - 1].y !== y) groups.push({ y, items: [] }); groups[groups.length - 1].items.push(e); }
   // los hechos filtrados quedan como marcas tenues; los años sin hechos visibles no se pueden elegir
@@ -610,6 +627,7 @@ function render(){
   }
   if (!list.length) html += `<p class="empty">Ningún hecho coincide con los filtros. <button type="button" data-reset>Ver todo</button></p>`;
   rail.innerHTML = html;
+  heroStrokes(heroShown ? 0 : 520); heroShown = true;
   if (typeof observeStacks === "function") observeStacks(rail);
   $("count").textContent = `${list.length} de ${EVENTS.length} hechos`;
   const active = (state.q.trim() ? 1 : 0) + (state.th ? 1 : 0) + (state.tp ? 1 : 0) + (state.key ? 1 : 0);
@@ -1046,7 +1064,10 @@ function markFocus(){
 }
 function strokes(pile){
   const head = pile.querySelector(".front .head"), mk = head && head.querySelector(".mk");
-  if (!mk) return;
+  if (mk) drawStrokes(head, mk);
+}
+// un trazo de marcador por renglón del texto de mk, dibujado dentro de head
+function drawStrokes(head, mk){
   head.querySelectorAll(".stroke").forEach(n => n.remove());
   const range = document.createRange(); range.selectNodeContents(mk);
   const hb = head.getBoundingClientRect();
@@ -1074,7 +1095,7 @@ function strokes(pile){
 const track = () => { if (!yrRaf) yrRaf = requestAnimationFrame(markYear); };
 rail.addEventListener("scroll", track, { passive: true });
 window.addEventListener("scroll", track, { passive: true });
-const restroke = () => { rail.querySelectorAll(".pile.focus").forEach(p => p.classList.remove("focus")); track(); };
+const restroke = () => { rail.querySelectorAll(".pile.focus").forEach(p => p.classList.remove("focus")); track(); heroStrokes(0); };
 window.addEventListener("resize", restroke);
 document.fonts?.ready.then(restroke);
 
