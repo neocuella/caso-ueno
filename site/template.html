@@ -485,8 +485,8 @@ function pileHTML(e){
   const kind = (KIND[s.k] || "Nota") + (m.extra ? ` · ${m.extra}` : "");
   const t = THREADS[e.th];
   const topics = (e.st || []).map(k => `<button type="button" data-topic="${k}">${esc(TOPICS[k])}</button>`).join("");
-  const nav = N > 1 ? `<span class="nav"><span>${esc(m.name)} · ${f + 1} de ${N}</span>
-      <button type="button" data-nav="-1" aria-label="Fuente anterior">←</button><button type="button" data-nav="1" aria-label="Fuente siguiente">→</button></span>` : `<span class="nav"><span>${esc(m.name)} · 1 de 1</span>
+  const nav = N > 1 ? `<span class="nav"><span>${f + 1} de ${N}</span>
+      <button type="button" data-nav="-1" aria-label="Fuente anterior">←</button><button type="button" data-nav="1" aria-label="Fuente siguiente">→</button></span>` : `<span class="nav"><span>1 de 1</span>
       <button type="button" disabled aria-label="Fuente anterior">←</button><button type="button" disabled aria-label="Fuente siguiente">→</button></span>`;
   return `<article class="pile${e.key ? " key" : ""}" id="e-${e.id}" data-id="${e.id}" style="--c:var(${t.c});--est:${estHeight(backs.length, s)}" aria-label="${esc(shortDate(e.p)  + (e.key ? ", hito" : "") + ", " + N + (N === 1 ? " fuente" : " fuentes"))}">
     <div class="stack" style="padding-top:${(backs.length * 3.3 + 1.6).toFixed(2)}em">${backHTML}
