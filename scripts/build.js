@@ -82,6 +82,8 @@ fs.writeFileSync(path.join(root, "dist", "artifact.html"), page);
 fs.writeFileSync(path.join(root, "dist", "index.html"),
   `<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n` +
   `<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>\n</head>\n<body>\n${page}\n</body>\n</html>\n`);
+// al publicar dist/ en Cloudflare, el fragmento artifact.html no se sube (solo sirve para Artifacts)
+fs.writeFileSync(path.join(root, "dist", ".assetsignore"), "artifact.html\n");
 const assets = path.join(root, "site", "assets");
 if (fs.existsSync(assets)) {
   fs.mkdirSync(path.join(root, "dist", "assets"), { recursive: true });

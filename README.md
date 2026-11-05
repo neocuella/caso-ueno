@@ -1,5 +1,7 @@
 # El caso ueno
 
+**[caso-ueno.rickovelar.com](https://caso-ueno.rickovelar.com)**
+
 Cronología abierta de lo que publicaron medios, legisladores y autoridades sobre **ueno bank**, el **Banco Central del Paraguay (BCP)** y el Gobierno de Santiago Peña. Va desde la financiera que dio origen al banco hasta la resolución dispuesta por el BCP el 3 de noviembre de 2026.
 
 El proyecto no afirma hechos por cuenta propia. Cada entrada resume lo que dijo una fuente pública y enlaza a todas las fuentes que cubrieron ese hecho.
@@ -44,6 +46,10 @@ Después, serví la carpeta `dist/` con cualquier servidor estático y abrila en
 ```bash
 python3 -m http.server 8765 --directory dist
 ``` `npm run build` también escribe `dist/data.json` con todos los datos en un solo archivo.
+
+### Publicación
+
+La página se publica en Cloudflare (Workers con archivos estáticos) según [wrangler.jsonc](wrangler.jsonc). `npx wrangler deploy` construye la página y sube `dist/` (salvo `artifact.html`).
 
 ## Usar los datos
 
