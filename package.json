@@ -5,6 +5,7 @@
   "description": "Cronología abierta y verificable de lo publicado sobre ueno bank, el BCP y el Gobierno de Paraguay.",
   "license": "MIT",
   "repository": "https://github.com/neocuella/caso-ueno",
+  "homepage": "https://caso-ueno.rickovelar.com",
   "engines": { "node": ">=18" },
   "scripts": {
     "validate": "node scripts/validate.js",

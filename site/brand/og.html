@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<!-- Imagen para compartir (1200×630). Se renderiza a site/assets/og.png con Chrome sin interfaz:
+     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --hide-scrollbars \
+       --force-device-scale-factor=1 --window-size=1200,630 --screenshot=site/assets/og.png site/brand/og.html -->
+<style>
+@font-face{font-family:"Geist";src:url(../assets/Geist-Variable.woff2) format("woff2");font-weight:100 900}
+@font-face{font-family:"Newsreader";src:url(../assets/Newsreader-latin.woff2) format("woff2");font-weight:400 800}
+@font-face{font-family:"Newsreader";src:url(../assets/Newsreader-Italic-latin.woff2) format("woff2");font-weight:400 800;font-style:italic}
+:root{--ink:#141413;--ink-2:#2C333D;--muted:#5B6370;--paper:#F4F1EA}
+html,body{margin:0;width:1200px;height:630px;overflow:hidden;background:#FFFFFF;color:var(--ink);font-family:"Geist",sans-serif;-webkit-font-smoothing:antialiased}
+.card{position:relative;width:1200px;height:630px;box-sizing:border-box;padding:56px 0 0 72px}
+.text{position:relative;z-index:2;width:610px}
+.ed{display:flex;justify-content:space-between;font-size:15px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-bottom:4px double var(--ink);padding-bottom:12px;margin-bottom:34px}
+h1{position:relative;margin:0 0 26px;font-family:"Newsreader",serif;font-weight:800;font-size:132px;line-height:.78;letter-spacing:-.035em}
+h1 span{position:relative;z-index:1}
+.mk{position:absolute;z-index:0;height:56px;border-radius:7px 3px 9px 4px / 4px 8px 3px 6px;
+  background:linear-gradient(100deg,rgba(255,216,20,.55) 0%,rgba(255,206,0,.72) 12%,rgba(255,210,0,.66) 55%,rgba(255,200,0,.76) 92%,rgba(255,216,20,.5) 100%)}
+.rule{border-top:1.5px solid var(--ink);padding-top:22px}
+p{margin:0;font-family:"Newsreader",serif;font-size:30px;line-height:1.3;color:var(--ink-2)}
+p em{color:var(--ink)}
+.url{position:absolute;left:72px;bottom:44px;font-size:22px;font-weight:600;color:var(--ink);letter-spacing:.01em}
+/* pila de diarios a la derecha */
+.stack{position:absolute;right:-30px;top:70px;width:520px;height:620px;transform:rotate(4deg);transform-origin:0 0}
+.paper{position:absolute;left:0;width:500px;box-sizing:border-box;border:1px solid #E1DED6;border-radius:0 0 8px 8px;
+  background:linear-gradient(rgba(244,241,234,.62),rgba(244,241,234,.62)),url(../assets/papel.jpg) center/cover;
+  box-shadow:0 -3px 12px -2px rgba(20,20,19,.30),2px -1px 4px -1px rgba(20,20,19,.18),0 30px 40px -18px rgba(20,20,19,.35);padding:14px 26px}
+.mast{font-family:"Newsreader",serif;font-weight:800;font-size:34px;text-align:center;letter-spacing:-.02em;border-bottom:3px double var(--ink);padding-bottom:6px}
+.p1{top:0;left:44px;transform:rotate(-2.2deg)} .p2{top:68px;left:26px;transform:rotate(1.4deg)} .p3{top:136px;left:12px;transform:rotate(-.8deg)}
+.p4{top:206px;left:0;height:420px;padding-top:18px}
+.p4 .dl{display:flex;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--ink);padding-bottom:7px;margin-bottom:10px}
+.p4 .mast{font-size:46px}
+.head{position:relative;margin-top:16px;font-family:"Newsreader",serif;font-weight:700;font-size:34px;line-height:1.08;letter-spacing:-.02em}
+.head span{position:relative;z-index:1}
+.head .mk{height:22px}
+.lines{margin-top:18px;border-top:1px solid rgba(110,88,50,.3);padding-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:9px 18px}
+.lines i{display:block;height:7px;border-radius:2px;background:#8F8A80;opacity:.42}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="stack" aria-hidden="true">
+    <div class="paper p1"><div class="mast">ABC Color</div></div>
+    <div class="paper p2"><div class="mast">La Nación</div></div>
+    <div class="paper p3"><div class="mast">Última Hora</div></div>
+    <div class="paper p4">
+      <div class="dl"><span>Nota</span><span>3 de noviembre de 2026</span></div>
+      <div class="mast">Última Hora</div>
+      <div class="head">
+        <i class="mk" style="left:-6px;top:18px;width:420px;transform:rotate(-.8deg)"></i>
+        <i class="mk" style="left:-4px;top:55px;width:410px;transform:rotate(.6deg)"></i>
+        <i class="mk" style="left:-6px;top:92px;width:110px;transform:rotate(-1deg)"></i>
+        <span>BCP dispone resolución de ueno bank por insuficiencia severa</span>
+      </div>
+      <div class="lines"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+  <div class="text">
+    <div class="ed"><span>Edición especial</span><span>Asunción, Paraguay</span></div>
+    <h1>
+      <i class="mk" style="left:-10px;top:40px;width:560px;transform:rotate(-1deg)"></i>
+      <i class="mk" style="left:-8px;top:142px;width:330px;transform:rotate(1.1deg)"></i>
+      <span>El caso<br>ueno</span>
+    </h1>
+    <div class="rule"><p>Cronología visual de lo publicado por medios, legisladores y autoridades sobre ueno bank, desde sus orígenes hasta su resolución.</p></div>
+  </div>
+  <div class="url">caso-ueno.rickovelar.com</div>
+</div>
+</body>
+</html>

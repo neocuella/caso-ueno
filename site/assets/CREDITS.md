@@ -1,5 +1,9 @@
 # Créditos de recursos
 
+## favicon.ico, favicon.svg, apple-touch-icon.png, icon-512.png y og.png
+
+Diseños propios del proyecto. Las fuentes están en `site/brand/` (`favicon.svg` y `og.html`, que se renderiza a `og.png` con Chrome sin interfaz; el comando está en el archivo).
+
 ## Geist-Variable.woff2
 
 Tipografía [Geist](https://vercel.com/font), de Vercel, versión 1.9.1, tomada de [vercel/geist-font](https://github.com/vercel/geist-font/releases/tag/v1.9.1) (`Geist/webfonts/Geist[wght].woff2`). Se sirve desde este sitio, sin servicios externos.
