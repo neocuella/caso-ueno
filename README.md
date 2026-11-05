@@ -71,5 +71,6 @@ Se aceptan fuentes nuevas, entradas nuevas y correcciones. Las reglas editoriale
 
 - **Datos** (`data/`): [CC BY 4.0](data/LICENSE.md), excepto los titulares (`headline`) y copetes (`lede`), que pertenecen a cada medio y se citan con fines informativos. Se pueden reutilizar con cualquier fin dando crédito; la forma de citar está en ese archivo.
 - **Código** (`scripts/`, `site/`): [MIT](LICENSE).
+- **Tipografías** Geist y Geist Serif (`site/assets/`): [SIL Open Font License 1.1](site/assets/Geist-OFL.txt), de Vercel. Créditos en [site/assets/CREDITS.md](site/assets/CREDITS.md).
 
 Los titulares y contenidos enlazados pertenecen a sus autores. El proyecto solo cita titulares y enlaza a las publicaciones originales.

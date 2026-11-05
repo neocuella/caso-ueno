@@ -1,17 +1,20 @@
 <title>El caso ueno</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,700;0,6..72,800;1,6..72,400;1,6..72,500&family=Instrument+Sans:wght@400;500;600&display=swap">
+<link rel="preload" href="assets/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/GeistSerif-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+/* Tipografías Geist (Vercel), servidas desde assets/ — licencia SIL OFL 1.1, ver assets/Geist-OFL.txt.
+   Geist es variable (pesos 100–900). Geist Serif tiene un solo peso (Regular). */
+@font-face{font-family:"Geist";src:url(assets/Geist-Variable.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:"Geist Serif";src:url(assets/GeistSerif-Variable.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
 /* Layout: un puesto de diarios. Cada fuente es un diario sábana doblado; cada hecho, una pila.
    Escritorio: fila horizontal con snap. Móvil (<900px): columna vertical. Filtros en una píldora fija abajo.
    Tema único claro a propósito: es papel sobre blanco. */
 :root{
   --bg:#FFFFFF; --ink:#141413; --ink-2:#2C333D; --muted:#5B6370; --line:#E3E6EA; --link:#1F2933;
   --t-banco:#B5245A; --t-gobierno:#1B6EC2; --t-congreso:#7E3BB0; --t-fondos:#2F7D32; --t-supervision:#C2550A;
-  --f-serif:"Newsreader",Georgia,"Times New Roman",serif;
-  --f-sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-serif:"Geist Serif",Georgia,"Times New Roman",serif;
+  --f-sans:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
   --noise:none; --hito:#C8352A;
   color-scheme:light;
 }
@@ -19,7 +22,9 @@
 html{height:100%}
 /* en el celular el cuerpo crece con el contenido: así la línea de tiempo queda pegada arriba durante todo el recorrido */
 body{min-height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-sans);-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-sans);-webkit-font-smoothing:antialiased;
+  /* Geist Serif no tiene negritas: que el navegador no las imite (sí puede inclinarla para la cursiva) */
+  font-synthesis:style}
 a{color:var(--link)}
 button,select,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ink);outline-offset:3px}
