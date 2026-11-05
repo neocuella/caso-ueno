@@ -129,15 +129,16 @@ const html =
 fs.writeFileSync(path.join(root, "dist", "index.html"), html);
 // cabeceras de seguridad para Cloudflare (Workers con archivos estáticos lee dist/_headers).
 // La página solo carga archivos propios; el script en línea se autoriza por su hash, que se recalcula en cada build.
+// Cloudflare inyecta el script de Web Analytics, que se carga y envía datos a cloudflareinsights.com.
 const scriptHashes = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
   .map(m => `'sha256-${require("crypto").createHash("sha256").update(m[1]).digest("base64")}'`);
 const CSP = [
   "default-src 'none'",
-  `script-src ${scriptHashes.join(" ")}`,
+  `script-src ${scriptHashes.join(" ")} https://static.cloudflareinsights.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://cloudflareinsights.com",
   "manifest-src 'self'",
   "base-uri 'none'",
   "form-action 'self'",
