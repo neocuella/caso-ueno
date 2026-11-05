@@ -96,6 +96,8 @@ i.fold{top:auto;height:4.75em;background:linear-gradient(to bottom,rgba(20,20,19
   background:linear-gradient(100deg,rgba(255,216,20,.5) 0%,rgba(255,206,0,.66) 12%,rgba(255,210,0,.6) 55%,rgba(255,200,0,.7) 92%,rgba(255,216,20,.45) 100%);
   transform-origin:0 50%;transform:rotate(var(--r)) skewX(var(--k)) scaleX(0);transition:transform .5s cubic-bezier(.35,.6,.2,1) var(--d)}
 .pile.focus .stroke{transform:rotate(var(--r)) skewX(var(--k)) scaleX(1)}
+.head-a{color:inherit;text-decoration:none;text-decoration-thickness:1px;text-underline-offset:.12em}
+.head-a:hover{text-decoration-line:underline}
 .head{font-family:var(--f-serif);font-weight:700;line-height:1.03;letter-spacing:-.02em;text-wrap:balance;padding-top:.15em;overflow-wrap:break-word}
 .body{margin-top:.375em;border-top:1px solid rgba(110,88,50,.24);padding-top:.55em;column-count:2;column-gap:.9em;column-rule:1px solid rgba(110,88,50,.24)}
 .body.lede{font-family:var(--f-serif);font-size:.594em;line-height:1.35;color:#3C4450;column-gap:1.5em;text-align:justify;hyphens:auto;padding-top:.75em}
@@ -485,7 +487,8 @@ function pileHTML(e){
       <div class="mast" style="font-size:${mastSize(bm.name, false)}em">${esc(bm.name)}</div>${bHead}${bBody}</div></button>`;
   }).join("");
   const head = s.h
-    ? `<div class="head" style="font-size:${headSize(s.h.length)}em"><span class="mk">${esc(s.h)}</span></div>`
+    // el titular también abre la publicación (atajo para el mouse; con teclado se llega por "Leer la nota en…")
+    ? `<div class="head" style="font-size:${headSize(s.h.length)}em"><span class="mk"><a class="head-a" href="${esc(s.u)}" target="_blank" rel="noopener noreferrer" tabindex="-1" draggable="false">${esc(s.h)}</a></span></div>`
     : `<div class="head none">Titular no registrado</div>`;
   const body = s.l
     ? `<div class="body lede">${esc(s.l)}</div>`
