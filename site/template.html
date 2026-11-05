@@ -181,7 +181,7 @@ i.fold{top:auto;height:4.75em;background:linear-gradient(to bottom,rgba(20,20,19
 .about h3{margin:24px 0 10px;font-family:var(--f-serif);font-size:21px;font-weight:700;letter-spacing:-.01em;border-top:1px solid var(--ink);padding-top:12px}
 .about p{margin:0 0 12px;font-size:15px;line-height:1.55;color:var(--ink-2)}
 .about a{color:var(--link)}
-.about .about-sign{margin:20px 0 4px;padding-top:12px;border-top:3px double var(--ink);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.about .about-sign{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0 4px;padding-top:6px;border-top:3px double var(--ink);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
 .about .about-sign b{color:var(--ink)}
 .about .about-lede{margin-bottom:16px;font-family:var(--f-serif);font-size:17px;line-height:1.45;color:var(--ink-2);text-wrap:pretty}
 .about-x{all:unset;flex:none;width:40px;height:40px;display:grid;place-items:center;font-size:24px;line-height:1;cursor:pointer}
@@ -506,9 +506,10 @@ function pileHTML(e){
 const X_HANDLE = "mendigodetokens";
 const ICON_X = `<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`;
 const ICON_GH = `<svg viewBox="0 0 16 16" width="19" height="19" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
+const socialLink = (href, label, icon) => `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer" title="${esc(label)}" aria-label="${esc(label)} (se abre en una ventana nueva)">${icon}</a>`;
+const X_LINK = () => socialLink(`https://x.com/${X_HANDLE}`, `@${X_HANDLE} en X`, ICON_X);
 function SOCIAL(){
-  const a = (href, label, icon) => `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer" title="${esc(label)}" aria-label="${esc(label)} (se abre en una ventana nueva)">${icon}</a>`;
-  return a(`https://x.com/${X_HANDLE}`, `@${X_HANDLE} en X`, ICON_X) + (META.repo ? a(META.repo, "Código y datos en GitHub", ICON_GH) : "");
+  return X_LINK() + (META.repo ? socialLink(META.repo, "Código y datos en GitHub", ICON_GH) : "");
 }
 function introHTML(){
   return `<section class="intro" id="inicio">
@@ -535,7 +536,7 @@ function aboutHTML(){
     <p>La búsqueda también encuentra a las personas que cada publicación nombra en su titular, su copete o su texto: el de la nota, la publicación o el documento, o el título y la descripción del video (no lo que se dice en el video). Que una persona sea nombrada no indica su papel en los hechos; para saberlo hay que leer la publicación.</p>
     <p>Textura de papel: foto de <a href="https://unsplash.com/@indieground?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText" target="_blank" rel="noopener noreferrer">Indieground Design<span class="ext sm" aria-hidden="true">↗</span><span class="sr">(se abre en una ventana nueva)</span></a> en <a href="https://unsplash.com/photos/creased-off-white-paper-sheet-vgFESKJqUyo?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText" target="_blank" rel="noopener noreferrer">Unsplash<span class="ext sm" aria-hidden="true">↗</span><span class="sr">(se abre en una ventana nueva)</span></a>.</p>
     <p>Datos actualizados al ${esc(shortDate(META.updated))}.</p>
-    <p class="about-sign">Un proyecto de <b>Ricardo Ovelar</b></p>`;
+    <div class="about-sign"><span>Un proyecto de <b>Ricardo Ovelar</b></span><span class="social">${X_LINK()}</span></div>`;
 }
 
 /* ---------- filtros y render ---------- */
