@@ -45,7 +45,9 @@ Después, serví la carpeta `dist/` con cualquier servidor estático y abrila en
 
 ```bash
 python3 -m http.server 8765 --directory dist
-``` `npm run build` también escribe `dist/data.json` con todos los datos en un solo archivo.
+```
+
+`npm run build` también escribe `dist/data.json` con todos los datos en un solo archivo.
 
 ### Publicación
 
