@@ -1,10 +1,10 @@
 name: Validar datos
 
+# Revisa los aportes en cada pull request. En main no hace falta: el flujo Publicar
+# construye la página, y la construcción valida los datos antes de publicar.
 on:
   pull_request:
     paths: ["data/**", "scripts/**", "site/**", ".github/workflows/validate.yml"]
-  push:
-    branches: [main]
 
 jobs:
   validate:
