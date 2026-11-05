@@ -258,12 +258,13 @@ html:has(.about[open]){overflow:hidden}
 .tl-axis{flex:1;min-width:0}
 /* eje: línea base, una rayita por mes y una más alta por año (el ancho de cada año es el mismo: escala de tiempo real) */
 .tl-track{--years:8;position:relative;height:26px;cursor:pointer;touch-action:none;
+  /* la escala cuelga debajo de la línea base (años 5px, meses 2px); por encima de la línea solo hay hechos */
   background:
-    linear-gradient(90deg,#9AA1AB 1px,transparent 1px) 0 100%/calc(100% / var(--years)) 9px repeat-x,
-    linear-gradient(90deg,#DADDE1 1px,transparent 1px) 0 100%/calc(100% / var(--years) / 12) 4px repeat-x,
-    linear-gradient(#C4C8CE,#C4C8CE) 0 100%/100% 1px no-repeat}
+    linear-gradient(90deg,#B4BAC2 1px,transparent 1px) 0 100%/calc(100% / var(--years)) 5px repeat-x,
+    linear-gradient(90deg,#DADDE1 1px,transparent 1px) 0 calc(100% - 3px)/calc(100% / var(--years) / 12) 2px repeat-x,
+    linear-gradient(#C4C8CE,#C4C8CE) 0 calc(100% - 5px)/100% 1px no-repeat}
 .tl-track:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:2px}
-.tl-ticks{position:absolute;inset:0 0 1px;pointer-events:none}
+.tl-ticks{position:absolute;inset:0 0 6px;pointer-events:none}
 /* las marcas son semitransparentes: los días con muchos hechos se ven más oscuros */
 .tl-ticks i{position:absolute;bottom:0;width:2px;margin-left:-1px;height:12px;background:var(--ink);opacity:.34;border-radius:1px 1px 0 0}
 .tl-ticks i.k{height:19px;background:var(--hito);opacity:.9;z-index:1}
