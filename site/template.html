@@ -602,7 +602,7 @@ function heroStrokes(delay){
   if (!mk) return;
   document.fonts.ready.then(() => {
     if (!h1.isConnected) return;
-    drawStrokes(h1, mk);
+    drawStrokes(h1, mk, { lift: .12, tilt: 1.1 });
     void h1.offsetWidth;
     setTimeout(() => h1.parentElement.classList.add("lit"), delay);
   });
@@ -1066,8 +1066,9 @@ function strokes(pile){
   const head = pile.querySelector(".front .head"), mk = head && head.querySelector(".mk");
   if (mk) drawStrokes(head, mk);
 }
-// un trazo de marcador por renglón del texto de mk, dibujado dentro de head
-function drawStrokes(head, mk){
+// un trazo de marcador por renglón del texto de mk, dibujado dentro de head.
+// opts.lift sube los trazos (fracción del alto del renglón); opts.tilt fuerza una inclinación visible, alternada por renglón
+function drawStrokes(head, mk, opts = {}){
   head.querySelectorAll(".stroke").forEach(n => n.remove());
   const range = document.createRange(); range.selectNodeContents(mk);
   const hb = head.getBoundingClientRect();
@@ -1084,8 +1085,8 @@ function drawStrokes(head, mk){
     const el = document.createElement("i");
     el.className = "stroke";
     const lh = l.h, padL = lh * (.04 + rnd() * .12), padR = lh * (.06 + rnd() * .18);
-    const ht = lh * (.5 + rnd() * .14), top = l.top - hb.top + lh * (.36 + rnd() * .1);
-    const rot = rnd() < .35 ? (rnd() - .5) * .5 : (rnd() - .5) * 2.4;
+    const ht = lh * (.5 + rnd() * .14), top = l.top - hb.top + lh * (.36 - (opts.lift || 0) + rnd() * .1);
+    const rot = opts.tilt ? (i % 2 ? 1 : -1) * opts.tilt * (.7 + rnd() * .6) : rnd() < .35 ? (rnd() - .5) * .5 : (rnd() - .5) * 2.4;
     const rad = () => (2 + rnd() * 7).toFixed(1) + "px";
     el.style.cssText = `left:${(l.left - hb.left - padL).toFixed(1)}px;top:${top.toFixed(1)}px;width:${(l.right - l.left + padL + padR).toFixed(1)}px;height:${ht.toFixed(1)}px;` +
       `border-radius:${rad()} ${rad()} ${rad()} ${rad()} / ${rad()} ${rad()} ${rad()} ${rad()};--r:${rot.toFixed(2)}deg;--k:${((rnd() - .5) * 6).toFixed(1)}deg;--d:${(i * .22).toFixed(2)}s`;
