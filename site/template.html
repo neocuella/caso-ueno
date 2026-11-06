@@ -855,18 +855,24 @@ const ZR = 72, ZD = 1.3;
 let zoneAt = null;
 const zoneX = (x, px) => { const d = x - px, t = Math.abs(d) / ZR; return t >= 1 ? x : px + Math.sign(d) * ZR * (ZD + 1) * t / (ZD * t + 1); };
 const zoneShift = pos => { const x = pos / 100 * tlTrack.clientWidth; return `translateX(${(zoneX(x, zoneAt) - x).toFixed(2)}px)`; };
+// solo se tocan las marcas que están (o estaban) dentro de la zona: el resto queda sin transform
+const ZONE_MARKS = () => [...EVENTS.map(e => [TICK[e.id], e._x, true]), ...[...$("tl-scale").children].map(el => [el, parseFloat(el.style.left), false])];
+let zoneMarks = null, zoneOn = new Set();
 function paintZone(px){
   zoneAt = px;
   tl.classList.toggle("zoom", px != null);
-  const w = tlTrack.clientWidth;
-  for (const e of EVENTS) {
-    const el = TICK[e.id];
-    if (px == null) { el.style.transform = ""; continue; }
-    const x = e._x / 100 * w, z = zoneX(x, px);
-    // como el dock de macOS: cada marca crece según qué tan cerca está del puntero
-    el.style.transform = `translateX(${(z - x).toFixed(2)}px) scaleY(${(1 + .55 * Math.exp(-(((z - px) / 22) ** 2))).toFixed(3)})`;
+  zoneMarks ||= ZONE_MARKS();
+  const w = tlTrack.clientWidth, next = new Set();
+  if (px != null) for (const m of zoneMarks) {
+    const [el, pos, tick] = m, x = pos / 100 * w;
+    if (Math.abs(x - px) >= ZR) continue;
+    const z = zoneX(x, px);
+    // como el dock de macOS: cada marca de hecho crece según qué tan cerca está del puntero
+    el.style.transform = `translateX(${(z - x).toFixed(2)}px)` + (tick ? ` scaleY(${(1 + .55 * Math.exp(-(((z - px) / 22) ** 2))).toFixed(3)})` : "");
+    next.add(el);
   }
-  for (const el of $("tl-scale").children) el.style.transform = px == null ? "" : zoneShift(parseFloat(el.style.left));
+  for (const el of zoneOn) if (!next.has(el)) el.style.transform = "";
+  zoneOn = next;
   tlNeedle.style.transform = px == null ? "" : zoneShift(needlePos);
 }
 function showTip(e){
@@ -877,24 +883,39 @@ function showTip(e){
   const w = tlTrack.clientWidth, half = tlTip.offsetWidth / 2, x0 = e._x / 100 * w, x = zoneAt == null ? x0 : zoneX(x0, zoneAt);
   tlTip.style.left = Math.max(half - 8, Math.min(w - half + 8, x)).toFixed(1) + "px";
 }
-let scrub = null;
+/* arrastrar sobre la barra lleva la fila al hecho bajo el dedo o el puntero. Cada salto obliga a dibujar pilas nuevas
+   (la primera vez, con todas sus capas de papel), y en un celular eso no entra en un cuadro: con el dedo, la fila
+   se mueve cuando el dedo se detiene un momento o se levanta, y mientras tanto el globo muestra el hecho;
+   con el mouse se mueve como mucho una vez por cuadro */
+let scrub = null, scrubGo = 0, scrubTouch = false;
+function scrubTo(e, now){
+  clearTimeout(scrubGo); cancelAnimationFrame(scrubGo);
+  if (now) { goTo(e, false); return; }
+  scrubGo = scrubTouch ? setTimeout(() => goTo(e, false), 140) : requestAnimationFrame(() => goTo(e, false));
+}
 tlTrack.addEventListener("pointerdown", ev => {
   if (ev.button !== 0) return;
   const e = nearestAt(ev.clientX);
   if (!e) return;
   ev.preventDefault();
   tlTrack.setPointerCapture(ev.pointerId);
-  scrub = e;
+  scrub = e; scrubTouch = ev.pointerType !== "mouse";
   stopGlide(true);
   paintZone(ev.clientX - tlTrack.getBoundingClientRect().left);
-  goTo(e, false); showTip(e);
+  scrubTo(e, !scrubTouch); showTip(e);
 });
 tlTrack.addEventListener("pointermove", ev => {
   const e = nearestAt(ev.clientX);
-  if (scrub && e && e !== scrub) { scrub = e; goTo(e, false); }
+  if (scrub && e && e !== scrub) { scrub = e; scrubTo(e); }
   if (scrub || ev.pointerType === "mouse") { paintZone(ev.clientX - tlTrack.getBoundingClientRect().left); showTip(e); }
 });
-const endScrub = ev => { if (!scrub) return; scrub = null; if (ev.pointerType !== "mouse") { showTip(null); paintZone(null); } scheduleFocus(); };
+const endScrub = ev => {
+  if (!scrub) return;
+  scrubTo(scrub, true);
+  scrub = null;
+  if (ev.pointerType !== "mouse") { showTip(null); paintZone(null); }
+  scheduleFocus();
+};
 tlTrack.addEventListener("pointerup", endScrub);
 tlTrack.addEventListener("pointercancel", endScrub);
 tlTrack.addEventListener("pointerleave", () => { if (!scrub) { showTip(null); paintZone(null); } });
