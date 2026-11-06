@@ -887,11 +887,25 @@ function showTip(e){
    (la primera vez, con todas sus capas de papel), y en un celular eso no entra en un cuadro: con el dedo, la fila
    se mueve cuando el dedo se detiene un momento o se levanta, y mientras tanto el globo muestra el hecho;
    con el mouse se mueve como mucho una vez por cuadro */
-let scrub = null, scrubGo = 0, scrubTouch = false;
+let scrub = null, scrubGo = 0, scrubTouch = false, scrubShown = "";
+/* en el celular el salto es instantáneo (desplazar de verdad dibujaría todas las pilas del camino); para que no parezca
+   un corte, la fila llega deslizándose y aclarándose, como al final de un desplazamiento rápido que frena en el hecho.
+   Solo se anima un transform y la opacidad: no hay que volver a dibujar nada */
+function arrive(dir){
+  if (desktop.matches || reduced.matches || !dir) return;
+  rail.animate([{ transform: `translateY(${dir * 72}px)`, opacity: .15 }, { transform: "none", opacity: 1 }],
+    { duration: 380, easing: "cubic-bezier(.16,.84,.3,1)" });
+}
+function scrubLand(e){
+  const from = VIS.indexOf(EV[scrubShown]), to = VIS.indexOf(e);
+  goTo(e, false);
+  if (scrubTouch && e.id !== scrubShown) arrive(from < 0 ? 1 : Math.sign(to - from));
+  scrubShown = e.id;
+}
 function scrubTo(e, now){
   clearTimeout(scrubGo); cancelAnimationFrame(scrubGo);
-  if (now) { goTo(e, false); return; }
-  scrubGo = scrubTouch ? setTimeout(() => goTo(e, false), 140) : requestAnimationFrame(() => goTo(e, false));
+  if (now) { scrubLand(e); return; }
+  scrubGo = scrubTouch ? setTimeout(() => scrubLand(e), 140) : requestAnimationFrame(() => scrubLand(e));
 }
 tlTrack.addEventListener("pointerdown", ev => {
   if (ev.button !== 0) return;
@@ -899,6 +913,7 @@ tlTrack.addEventListener("pointerdown", ev => {
   if (!e) return;
   ev.preventDefault();
   tlTrack.setPointerCapture(ev.pointerId);
+  scrubShown = activeId;   // el hecho que la fila muestra ahora: de ahí sale la dirección del deslizamiento
   scrub = e; scrubTouch = ev.pointerType !== "mouse";
   stopGlide(true);
   paintZone(ev.clientX - tlTrack.getBoundingClientRect().left);
