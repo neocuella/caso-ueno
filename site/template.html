@@ -613,7 +613,11 @@ $("tl-scale").innerHTML = YEARS.flatMap(y => [
 // cada etiqueta ocupa el ancho de su año en la escala
 tlYears.innerHTML = YEARS.map(y => `<button type="button" data-year="${y}" aria-label="Ir a ${y}" style="flex-grow:${(yearEdge(y + 1) - yearEdge(y)).toFixed(4)}">${y}</button>`).join("");
 // los años angostos muestran '19 o nada (el botón sigue ahí, con su nombre para lectores de pantalla)
+let fitW = 0;
 function fitYears(){
+  const w = tlYears.clientWidth;
+  if (!w || w === fitW) return;
+  fitW = w;
   for (const b of tlYears.children) {
     b.textContent = b.dataset.year;
     if (b.scrollWidth > b.clientWidth + .5) b.textContent = "’" + b.dataset.year.slice(2);
@@ -1168,8 +1172,11 @@ const track = () => { if (!yrRaf) yrRaf = requestAnimationFrame(markYear); };
 rail.addEventListener("scroll", track, { passive: true });
 window.addEventListener("scroll", track, { passive: true });
 const restroke = () => { rail.querySelectorAll(".pile.focus").forEach(p => p.classList.remove("focus")); track(); heroStrokes(0); if (!tl.hidden) fitYears(); };
-window.addEventListener("resize", restroke);
-document.fonts?.ready.then(restroke);
+// en celulares la ventana cambia de alto al mostrarse u ocultarse la barra del navegador mientras se desplaza:
+// esos cambios no mueven nada de lugar, así que solo se redibuja cuando cambia el ancho
+let lastVW = innerWidth;
+window.addEventListener("resize", () => { if (innerWidth === lastVW) return; lastVW = innerWidth; restroke(); });
+document.fonts?.ready.then(() => { fitW = 0; restroke(); });
 
 /* ---------- arranque ---------- */
 render();
