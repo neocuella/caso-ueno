@@ -902,11 +902,13 @@ tlTrack.addEventListener("pointerdown", ev => {
   scrub = e; scrubTouch = ev.pointerType !== "mouse";
   stopGlide(true);
   paintZone(ev.clientX - tlTrack.getBoundingClientRect().left);
+  updateTimeline(e._x, e);
   scrubTo(e, !scrubTouch); showTip(e);
 });
 tlTrack.addEventListener("pointermove", ev => {
   const e = nearestAt(ev.clientX);
-  if (scrub && e && e !== scrub) { scrub = e; scrubTo(e); }
+  // la aguja, la fecha y el año siguen al dedo en el momento; la fila llega después (ver scrubTo)
+  if (scrub && e && e !== scrub) { scrub = e; updateTimeline(e._x, e); scrubTo(e); }
   if (scrub || ev.pointerType === "mouse") { paintZone(ev.clientX - tlTrack.getBoundingClientRect().left); showTip(e); }
 });
 const endScrub = ev => {
@@ -1133,7 +1135,8 @@ let yrRaf = 0;
 function markYear(){
   yrRaf = 0;
   const piles = rail.querySelectorAll(".pile");
-  if (piles.length) {
+  // mientras se arrastra sobre la barra, la aguja la maneja el arrastre, no el desplazamiento de la fila
+  if (piles.length && !scrub) {
     const horiz = desktop.matches;
     const mid = horiz ? rail.scrollLeft + rail.clientWidth / 2 : window.scrollY + window.innerHeight / 2;
     const c = el => horiz ? el.offsetLeft + el.offsetWidth / 2 : el.offsetTop + el.offsetHeight / 2;
