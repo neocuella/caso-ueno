@@ -256,10 +256,11 @@ html:has(.about[open]){overflow:hidden}
 .sheet-go:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){ .filters,.bar.open .filters,.sheet-bg,.bar.open .sheet-bg{transition:none} }
 
-/* ---------- Línea de tiempo: una marca por hecho en su fecha real; la aguja sigue al hecho en pantalla ---------- */
+/* ---------- Línea de tiempo: una marca por hecho (escala mixta, ver el script); la aguja sigue al hecho en pantalla ---------- */
 .tl{position:sticky;top:0;z-index:19;display:flex;align-items:center;gap:14px;
   padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));
-  background:rgba(255,255,255,.93);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid #EEF0F2}
+  background:var(--bg);border-bottom:1px solid #EEF0F2}
+/* fondo opaco, sin desenfoque: en celulares, una barra fija con backdrop-filter parpadea y desaparece al desplazarse */
 .tl[hidden]{display:none}
 .tl-now{flex:none;width:56px;display:flex;flex-direction:column;gap:4px}
 .tl-now b{font-family:var(--f-serif);font-weight:800;font-size:24px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
