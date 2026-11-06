@@ -582,17 +582,22 @@ const state = { q: "", th: "", tp: "", key: false };
 { const h = location.hash.replace(/^#/, ""); if (h.startsWith("tema-") && TOPICS[h.slice(5)]) state.tp = h.slice(5); }
 const $ = id => document.getElementById(id);
 const rail = $("rail");
-/* línea de tiempo: escala lineal del 1 de enero del primer año al 1 de enero siguiente al último */
+/* línea de tiempo: escala lineal del 1 de enero del primer año hasta unos días después del último hecho;
+   el último año queda tan largo como lo transcurrido, así la escala termina donde terminan las publicaciones */
 const tl = $("tl"), tlTrack = $("tl-track"), tlNeedle = $("tl-needle"), tlTip = $("tl-tip"), tlYears = $("tl-years");
 const EV = Object.fromEntries(EVENTS.map(e => [e.id, e]));
-const TY0 = +EVENTS[0].p.slice(0, 4), TY1 = +EVENTS[EVENTS.length - 1].p.slice(0, 4) + 1;
-const TT0 = Date.UTC(TY0, 0, 1), TT1 = Date.UTC(TY1, 0, 1);
 const tAt = p => Date.parse(p.length === 4 ? p + "-01-01" : p.length === 7 ? p + "-01" : p);
+const YEAR_MS = 365.2425 * 864e5;
+const TY0 = +EVENTS[0].p.slice(0, 4), TY1 = +EVENTS[EVENTS.length - 1].p.slice(0, 4) + 1;
+const TT0 = Date.UTC(TY0, 0, 1), TT1 = Math.min(Date.UTC(TY1, 0, 1), Math.max(...EVENTS.map(e => tAt(e.p))) + 10 * 864e5);
 for (const e of EVENTS) e._x = (tAt(e.p) - TT0) / (TT1 - TT0) * 100;
-tlTrack.style.setProperty("--years", TY1 - TY0);
+// las rayitas de año y mes se repiten cada año; con un último año parcial, la cuenta de años no es entera
+tlTrack.style.setProperty("--years", (TT1 - TT0) / YEAR_MS);
 $("tl-ticks").innerHTML = EVENTS.map(e => `<i${e.key ? ' class="k"' : ""} style="left:${e._x.toFixed(3)}%"></i>`).join("");
 const TICK = Object.fromEntries(EVENTS.map((e, i) => [e.id, $("tl-ticks").children[i]]));
-tlYears.innerHTML = Array.from({ length: TY1 - TY0 }, (_, i) => TY0 + i).map(y => `<button type="button" data-year="${y}" aria-label="Ir a ${y}">${y}</button>`).join("");
+// cada etiqueta ocupa el ancho de su año; la del último, solo la parte transcurrida
+const yearSpan = y => (Math.min(TT1, Date.UTC(y + 1, 0, 1)) - Date.UTC(y, 0, 1)) / YEAR_MS;
+tlYears.innerHTML = Array.from({ length: TY1 - TY0 }, (_, i) => TY0 + i).map(y => `<button type="button" data-year="${y}" aria-label="Ir a ${y}" style="flex-grow:${yearSpan(y).toFixed(4)}">${y}</button>`).join("");
 let VIS = [], activeYear = "", activeId = "";
 $("th").innerHTML = `<option value="">Todos los hilos</option>` + Object.entries(THREADS).map(([k, t]) => `<option value="${k}">${esc(t.label)}</option>`).join("");
 $("tp").innerHTML = `<option value="">Todos los temas</option>` + Object.entries(TOPICS).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("");
