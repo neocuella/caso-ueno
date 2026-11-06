@@ -265,23 +265,27 @@ html:has(.about[open]){overflow:hidden}
 .tl-now b{font-family:var(--f-serif);font-weight:800;font-size:24px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .tl-now small{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
 .tl-axis{flex:1;min-width:0}
-/* eje: línea base, una rayita por mes y una más alta por año (el ancho de cada año es el mismo: escala de tiempo real) */
-.tl-track{--years:8;position:relative;height:26px;cursor:pointer;touch-action:none;
-  /* la escala cuelga debajo de la línea base (años 5px, meses 2px); por encima de la línea solo hay hechos */
-  background:
-    linear-gradient(90deg,#B4BAC2 1px,transparent 1px) 0 100%/calc(100% / var(--years)) 5px repeat-x,
-    linear-gradient(90deg,#DADDE1 1px,transparent 1px) 0 calc(100% - 3px)/calc(100% / var(--years) / 12) 2px repeat-x,
-    linear-gradient(#C4C8CE,#C4C8CE) 0 calc(100% - 5px)/100% 1px no-repeat}
+/* eje: línea base, una rayita por mes y una más alta por año. La escala es mixta (ver el script):
+   los años con más hechos son más anchos, así que las rayitas de año y mes son elementos ubicados uno por uno */
+.tl-track{position:relative;height:26px;cursor:pointer;touch-action:none;
+  background:linear-gradient(#C4C8CE,#C4C8CE) 0 calc(100% - 5px)/100% 1px no-repeat}
 .tl-track:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:2px}
+/* la escala cuelga debajo de la línea base (años 5px, meses 2px); por encima de la línea solo hay hechos */
+.tl-scale{position:absolute;inset:0;pointer-events:none}
+.tl-scale b,.tl-scale u{position:absolute;width:1px;margin-left:-.5px}
+.tl-scale b{bottom:0;height:5px;background:#B4BAC2}
+.tl-scale u{bottom:3px;height:2px;background:#DADDE1}
 .tl-ticks{position:absolute;inset:0 0 6px;pointer-events:none}
-/* las marcas son semitransparentes: los días con muchos hechos se ven más oscuros */
-.tl-ticks i{position:absolute;bottom:0;width:2px;margin-left:-1px;height:12px;background:var(--ink);opacity:.34;border-radius:1px 1px 0 0}
+/* una rayita por hecho; crecen desde la línea base cuando el puntero se acerca */
+.tl-ticks i{position:absolute;bottom:0;width:2px;margin-left:-1px;height:12px;background:var(--ink);opacity:.34;border-radius:1px 1px 0 0;transform-origin:50% 100%}
 .tl-ticks i.k{height:19px;background:var(--hito);opacity:.9;z-index:1}
 .tl-ticks i.off{opacity:.08;background:var(--ink);height:8px}
 .tl-needle{position:absolute;top:-4px;bottom:-5px;left:0;border-left:2px solid var(--ink);margin-left:-1px;pointer-events:none;z-index:2}
 .tl-needle::before{content:"";position:absolute;top:-2px;left:-5px;width:8px;height:8px;border-radius:50%;background:var(--ink)}
+/* zona de atención: con el puntero encima, las marcas lo siguen casi sin demora */
+.tl.zoom .tl-ticks i,.tl.zoom .tl-scale > *,.tl.zoom .tl-needle{transition:transform .09s linear}
 .tl-years{display:flex;margin-top:5px}
-.tl-years button{all:unset;flex:1;min-width:0;text-align:center;font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;color:#8A919C;cursor:pointer;border-radius:4px;padding:1px 0}
+.tl-years button{all:unset;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-align:center;font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;color:#8A919C;cursor:pointer;border-radius:4px;padding:1px 0}
 .tl-years button:hover{color:var(--ink)}
 .tl-years button[aria-current="true"]{color:var(--ink)}
 .tl-years button:disabled{color:#CDD1D6;cursor:default}
@@ -348,6 +352,7 @@ html:has(.about[open]){overflow:hidden}
   <div class="tl-now" aria-hidden="true"><b id="tl-y"></b><small id="tl-d"></small></div>
   <div class="tl-axis">
     <div class="tl-track" id="tl-track" role="slider" tabindex="0" aria-label="Fecha del hecho en pantalla" aria-valuemin="1">
+      <div class="tl-scale" id="tl-scale"></div>
       <div class="tl-ticks" id="tl-ticks"></div>
       <span class="tl-needle" id="tl-needle"></span>
       <span class="tl-tip" id="tl-tip" hidden></span>
@@ -582,22 +587,39 @@ const state = { q: "", th: "", tp: "", key: false };
 { const h = location.hash.replace(/^#/, ""); if (h.startsWith("tema-") && TOPICS[h.slice(5)]) state.tp = h.slice(5); }
 const $ = id => document.getElementById(id);
 const rail = $("rail");
-/* línea de tiempo: escala lineal del 1 de enero del primer año hasta unos días después del último hecho;
-   el último año queda tan largo como lo transcurrido, así la escala termina donde terminan las publicaciones */
+/* línea de tiempo: escala mixta, del 1 de enero del primer año hasta unos días después del último hecho.
+   Un tercio del ancho sigue al tiempo y dos tercios a la cantidad de hechos: los años con más hechos son más anchos
+   y cada hecho tiene unos píxeles propios, aunque haya varios el mismo día, así que con el puntero se llega a todos.
+   (Con tiempo real, 2026 tiene la mitad de los hechos en un octavo del ancho, y los del mismo día quedan uno sobre otro.) */
 const tl = $("tl"), tlTrack = $("tl-track"), tlNeedle = $("tl-needle"), tlTip = $("tl-tip"), tlYears = $("tl-years");
 const EV = Object.fromEntries(EVENTS.map(e => [e.id, e]));
 const tAt = p => Date.parse(p.length === 4 ? p + "-01-01" : p.length === 7 ? p + "-01" : p);
-const YEAR_MS = 365.2425 * 864e5;
 const TY0 = +EVENTS[0].p.slice(0, 4), TY1 = +EVENTS[EVENTS.length - 1].p.slice(0, 4) + 1;
 const TT0 = Date.UTC(TY0, 0, 1), TT1 = Math.min(Date.UTC(TY1, 0, 1), Math.max(...EVENTS.map(e => tAt(e.p))) + 10 * 864e5);
-for (const e of EVENTS) e._x = (tAt(e.p) - TT0) / (TT1 - TT0) * 100;
-// las rayitas de año y mes se repiten cada año; con un último año parcial, la cuenta de años no es entera
-tlTrack.style.setProperty("--years", (TT1 - TT0) / YEAR_MS);
+const TL_TIME = .35;
+// posición (0 a 100) de un instante, según su parte del tiempo y cuántos hechos hay antes
+const tlPos = (t, before) => (TL_TIME * Math.min(1, (t - TT0) / (TT1 - TT0)) + (1 - TL_TIME) * before / EVENTS.length) * 100;
+const tlAt = t => tlPos(t, EVENTS.filter(e => tAt(e.p) < t).length);
+EVENTS.forEach((e, i) => { e._x = tlPos(tAt(e.p), i + .5); });
 $("tl-ticks").innerHTML = EVENTS.map(e => `<i${e.key ? ' class="k"' : ""} style="left:${e._x.toFixed(3)}%"></i>`).join("");
 const TICK = Object.fromEntries(EVENTS.map((e, i) => [e.id, $("tl-ticks").children[i]]));
-// cada etiqueta ocupa el ancho de su año; la del último, solo la parte transcurrida
-const yearSpan = y => (Math.min(TT1, Date.UTC(y + 1, 0, 1)) - Date.UTC(y, 0, 1)) / YEAR_MS;
-tlYears.innerHTML = Array.from({ length: TY1 - TY0 }, (_, i) => TY0 + i).map(y => `<button type="button" data-year="${y}" aria-label="Ir a ${y}" style="flex-grow:${yearSpan(y).toFixed(4)}">${y}</button>`).join("");
+// rayitas de año y de mes, cada una en su lugar de la escala
+const YEARS = Array.from({ length: TY1 - TY0 }, (_, i) => TY0 + i);
+const yearEdge = y => y >= TY1 ? 100 : tlAt(Date.UTC(y, 0, 1));
+$("tl-scale").innerHTML = YEARS.flatMap(y => [
+  ...(y > TY0 ? [`<b style="left:${yearEdge(y).toFixed(3)}%"></b>`] : []),
+  ...Array.from({ length: 11 }, (_, m) => Date.UTC(y, m + 1, 1)).filter(t => t < TT1).map(t => `<u style="left:${tlAt(t).toFixed(3)}%"></u>`)
+]).join("");
+// cada etiqueta ocupa el ancho de su año en la escala
+tlYears.innerHTML = YEARS.map(y => `<button type="button" data-year="${y}" aria-label="Ir a ${y}" style="flex-grow:${(yearEdge(y + 1) - yearEdge(y)).toFixed(4)}">${y}</button>`).join("");
+// los años angostos muestran '19 o nada (el botón sigue ahí, con su nombre para lectores de pantalla)
+function fitYears(){
+  for (const b of tlYears.children) {
+    b.textContent = b.dataset.year;
+    if (b.scrollWidth > b.clientWidth + .5) b.textContent = "’" + b.dataset.year.slice(2);
+    if (b.scrollWidth > b.clientWidth + .5) b.textContent = "";
+  }
+}
 let VIS = [], activeYear = "", activeId = "";
 $("th").innerHTML = `<option value="">Todos los hilos</option>` + Object.entries(THREADS).map(([k, t]) => `<option value="${k}">${esc(t.label)}</option>`).join("");
 $("tp").innerHTML = `<option value="">Todos los temas</option>` + Object.entries(TOPICS).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("");
@@ -642,6 +664,7 @@ function render(){
   for (const e of EVENTS) TICK[e.id].classList.toggle("off", !shown.has(e.id));
   for (const b of tlYears.children) b.disabled = !groups.some(g => g.y === b.dataset.year);
   tl.hidden = !list.length;
+  if (!tl.hidden) fitYears();
   tlTrack.setAttribute("aria-valuemax", list.length);
   activeYear = ""; activeId = "";
   for (const g of groups) {
@@ -793,8 +816,11 @@ $("hitos").addEventListener("click", () => setFilter({ key: !state.key }));
 const desktop = window.matchMedia("(min-width: 900px)");
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
 /* ---------- línea de tiempo: aguja, año actual, saltos ---------- */
+let needlePos = 0;
 function updateTimeline(pos, e){
+  needlePos = pos;
   tlNeedle.style.left = pos.toFixed(3) + "%";
+  if (zoneAt != null) tlNeedle.style.transform = zoneShift(pos);
   if (e.id === activeId) return;
   activeId = e.id;
   $("tl-d").textContent = shortDate(e.p).replace(/ \d{4}$/, "");
@@ -817,12 +843,33 @@ function nearestAt(clientX){
   for (const e of VIS) { const dd = Math.abs(e._x - x); if (dd < d) { d = dd; best = e; } }
   return best;
 }
+/* zona de atención: alrededor del puntero (ZR px a cada lado) las marcas se separan hasta 1 + ZD veces y crecen,
+   y en el borde de la zona vuelven exactamente a su lugar. Es solo visual: el puntero queda en el centro de la zona,
+   así que el hecho más cercano al puntero es el mismo con o sin ella, y se elige sobre la escala sin deformar */
+const ZR = 72, ZD = 1.3;
+let zoneAt = null;
+const zoneX = (x, px) => { const d = x - px, t = Math.abs(d) / ZR; return t >= 1 ? x : px + Math.sign(d) * ZR * (ZD + 1) * t / (ZD * t + 1); };
+const zoneShift = pos => { const x = pos / 100 * tlTrack.clientWidth; return `translateX(${(zoneX(x, zoneAt) - x).toFixed(2)}px)`; };
+function paintZone(px){
+  zoneAt = px;
+  tl.classList.toggle("zoom", px != null);
+  const w = tlTrack.clientWidth;
+  for (const e of EVENTS) {
+    const el = TICK[e.id];
+    if (px == null) { el.style.transform = ""; continue; }
+    const x = e._x / 100 * w, z = zoneX(x, px);
+    // como el dock de macOS: cada marca crece según qué tan cerca está del puntero
+    el.style.transform = `translateX(${(z - x).toFixed(2)}px) scaleY(${(1 + .55 * Math.exp(-(((z - px) / 22) ** 2))).toFixed(3)})`;
+  }
+  for (const el of $("tl-scale").children) el.style.transform = px == null ? "" : zoneShift(parseFloat(el.style.left));
+  tlNeedle.style.transform = px == null ? "" : zoneShift(needlePos);
+}
 function showTip(e){
   if (!e) { tlTip.hidden = true; return; }
   const s = ORDER[e.id][0];
   tlTip.innerHTML = `<small>${esc(shortDate(e.p))}${e.key ? ` <span class="k">· Hito</span>` : ""}</small><span>${esc(s.h || "")}</span>`;
   tlTip.hidden = false;
-  const w = tlTrack.clientWidth, half = tlTip.offsetWidth / 2, x = e._x / 100 * w;
+  const w = tlTrack.clientWidth, half = tlTip.offsetWidth / 2, x0 = e._x / 100 * w, x = zoneAt == null ? x0 : zoneX(x0, zoneAt);
   tlTip.style.left = Math.max(half - 8, Math.min(w - half + 8, x)).toFixed(1) + "px";
 }
 let scrub = null;
@@ -834,17 +881,18 @@ tlTrack.addEventListener("pointerdown", ev => {
   tlTrack.setPointerCapture(ev.pointerId);
   scrub = e;
   stopGlide(true);
+  paintZone(ev.clientX - tlTrack.getBoundingClientRect().left);
   goTo(e, false); showTip(e);
 });
 tlTrack.addEventListener("pointermove", ev => {
   const e = nearestAt(ev.clientX);
   if (scrub && e && e !== scrub) { scrub = e; goTo(e, false); }
-  if (scrub || ev.pointerType === "mouse") showTip(e);
+  if (scrub || ev.pointerType === "mouse") { paintZone(ev.clientX - tlTrack.getBoundingClientRect().left); showTip(e); }
 });
-const endScrub = ev => { if (!scrub) return; scrub = null; if (ev.pointerType !== "mouse") showTip(null); scheduleFocus(); };
+const endScrub = ev => { if (!scrub) return; scrub = null; if (ev.pointerType !== "mouse") { showTip(null); paintZone(null); } scheduleFocus(); };
 tlTrack.addEventListener("pointerup", endScrub);
 tlTrack.addEventListener("pointercancel", endScrub);
-tlTrack.addEventListener("pointerleave", () => { if (!scrub) showTip(null); });
+tlTrack.addEventListener("pointerleave", () => { if (!scrub) { showTip(null); paintZone(null); } });
 tlTrack.addEventListener("keydown", ev => {
   if (ev.key === "Home" && VIS.length) { goTo(VIS[0], true); ev.preventDefault(); }
   else if (ev.key === "End" && VIS.length) { goTo(VIS[VIS.length - 1], true); ev.preventDefault(); }
@@ -1119,7 +1167,7 @@ function drawStrokes(head, mk, opts = {}){
 const track = () => { if (!yrRaf) yrRaf = requestAnimationFrame(markYear); };
 rail.addEventListener("scroll", track, { passive: true });
 window.addEventListener("scroll", track, { passive: true });
-const restroke = () => { rail.querySelectorAll(".pile.focus").forEach(p => p.classList.remove("focus")); track(); heroStrokes(0); };
+const restroke = () => { rail.querySelectorAll(".pile.focus").forEach(p => p.classList.remove("focus")); track(); heroStrokes(0); if (!tl.hidden) fitYears(); };
 window.addEventListener("resize", restroke);
 document.fonts?.ready.then(restroke);
 
