@@ -48,7 +48,9 @@ button,select,input{font:inherit;color:inherit}
   box-sizing:content-box;padding:5em 3em;margin:-5em -3em;scroll-margin:calc(24px - 5em);pointer-events:none}
 .pile > *{pointer-events:auto}
 .stack{position:relative;transform-origin:50% 100%}
-.stack.live{will-change:transform}
+/* la inclinación al arrastrar solo existe en la computadora: en el celular no se promueve cada pila a su propia capa
+   (en iPhone, sumada a las capas de la animación de cambio de diario, la memoria se agotaba y la pila quedaba en blanco) */
+@media (min-width:900px){ .stack.live{will-change:transform} }
 .paper{position:relative;display:block}
 .paper::before{content:"";position:absolute;left:.625em;right:.625em;top:1.5em;bottom:0;border-radius:0 0 1em 1em;
   box-shadow:0 2.25em 3.125em -.5em rgba(20,20,19,.54),0 .375em .625em -.125em rgba(20,20,19,.28)}
@@ -708,8 +710,13 @@ function rerenderPile(id, focusSel, from){
   const el = document.getElementById("e-" + id), e = EVENTS.find(x => x.id === id);
   if (!el || !e) return;
   const before = from != null && !reduced.matches ? snapshot(el) : null;
-  el.outerHTML = pileHTML(e);
-  const np = document.getElementById("e-" + id);
+  // se cambia el contenido, no el elemento: la pila conserva su estado de dibujo (content-visibility) y su tamaño
+  const tpl = document.createElement("template");
+  tpl.innerHTML = pileHTML(e);
+  const fresh = tpl.content.firstElementChild;
+  for (const a of ["class", "style", "aria-label"]) el.setAttribute(a, fresh.getAttribute(a));
+  el.replaceChildren(...fresh.childNodes);
+  const np = el;
   if (np && typeof observeStacks === "function") { observeStacks(np); if (tilt) setTilt(tilt, true); }
   if (np && before) { shuffle(np, before, from); setTimeout(markFocus, SHUFFLE_MS); }
   else requestAnimationFrame(markFocus);
