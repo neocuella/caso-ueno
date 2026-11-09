@@ -273,11 +273,12 @@ html:has(.about[open]){overflow:hidden}
   background:var(--bg);border-bottom:1px solid #EEF0F2}
 /* fondo opaco, sin desenfoque: en celulares, una barra fija con backdrop-filter parpadea y desaparece al desplazarse */
 .tl[hidden]{display:none}
-.tl-now{flex:none;width:56px;display:flex;flex-direction:column;gap:4px}
+.tl-now{flex:none;width:72px;display:flex;flex-direction:column;gap:4px}
 .tl-now b{font-family:var(--f-serif);font-weight:800;font-size:24px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .tl-now small{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
-/* cuántos hechos tiene el año en pantalla: solo en escritorio (en el celular lo dice el encabezado de cada año) */
-.tl-now small #tl-n{display:none}
+/* bajo el año: en el celular, cuántos hechos tiene ese año (cada diario ya muestra su fecha);
+   en escritorio, la fecha del hecho en pantalla y al lado la cantidad */
+.tl-now small #tl-d{display:none}
 .tl-axis{flex:1;min-width:0}
 /* eje: línea base, una rayita por mes y una más alta por año. La escala es mixta (ver el script):
    los años con más hechos son más anchos, así que las rayitas de año y mes son elementos ubicados uno por uno */
@@ -318,7 +319,8 @@ html:has(.about[open]){overflow:hidden}
     padding:calc(18px + env(safe-area-inset-top,0px)) max(64px,env(safe-area-inset-right,0px)) 12px max(64px,env(safe-area-inset-left,0px))}
   /* ancho fijo, para que el eje no cambie de tamaño cuando cambian la fecha o la cantidad */
   .tl-now{width:150px}
-  .tl-now small #tl-n{display:inline}
+  .tl-now small #tl-d{display:inline}
+  .tl-now small #tl-n::before{content:" · "}
   .tl-now b{font-size:34px}
   .tl-years button{font-size:11px}
   /* filtros: en escritorio van en línea dentro de la barra, sin cajón */
@@ -639,10 +641,13 @@ function fitYears(){
   const w = tlYears.clientWidth;
   if (!w || w === fitW) return;
   fitW = w;
+  // el texto tiene que entrar con un poco de aire a los costados, para que dos años vecinos no se toquen
+  const range = document.createRange();
+  const tight = b => { range.selectNodeContents(b); return range.getBoundingClientRect().width + 6 > b.clientWidth; };
   for (const b of tlYears.children) {
     b.textContent = b.dataset.year;
-    if (b.scrollWidth > b.clientWidth + .5) b.textContent = "’" + b.dataset.year.slice(2);
-    if (b.scrollWidth > b.clientWidth + .5) b.textContent = "";
+    if (tight(b)) b.textContent = "’" + b.dataset.year.slice(2);
+    if (tight(b)) b.textContent = "";
   }
 }
 let VIS = [], activeYear = "", activeId = "";
@@ -886,7 +891,7 @@ function updateTimeline(pos, e){
   activeYear = year;
   $("tl-y").textContent = year;
   const n = VIS.filter(x => x.p.startsWith(year)).length;
-  $("tl-n").textContent = ` · ${n} ${n === 1 ? "hecho" : "hechos"}`;
+  $("tl-n").textContent = `${n} ${n === 1 ? "hecho" : "hechos"}`;
   for (const b of tlYears.children) b.dataset.year === year ? b.setAttribute("aria-current", "true") : b.removeAttribute("aria-current");
   for (const g of rail.querySelectorAll(".yr")) g.classList.toggle("on", g.id === `y-${year}`);
 }
