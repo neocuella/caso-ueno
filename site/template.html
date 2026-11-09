@@ -969,16 +969,22 @@ function showTip(e){
 let scrub = null, scrubGo = 0, scrubTouch = false, scrubShown = "";
 /* en el celular el salto es instantáneo (desplazar de verdad dibujaría todas las pilas del camino); para que no parezca
    un corte, la fila llega deslizándose y aclarándose, como al final de un desplazamiento rápido que frena en el hecho.
-   Solo se anima un transform y la opacidad: no hay que volver a dibujar nada */
-function arrive(dir){
-  if (desktop.matches || reduced.matches || !dir) return;
-  rail.animate([{ transform: `translateY(${dir * 72}px)`, opacity: .15 }, { transform: "none", opacity: 1 }],
-    { duration: 380, easing: "cubic-bezier(.16,.84,.3,1)" });
+   Se animan solo las pilas que quedaron en pantalla: animar la fila entera (más de 100.000 px de alto) obligaba a
+   Safari en el iPhone a volver a dibujarla completa en una capa aparte, y la página quedaba en blanco un segundo */
+function arrive(dir, e){
+  if (desktop.matches || reduced.matches || !dir || !e) return;
+  const i = VIS.indexOf(e), vh = innerHeight;
+  for (const x of [VIS[i - 1], e, VIS[i + 1]]) {
+    const el = x && document.getElementById("e-" + x.id), r = el?.getBoundingClientRect();
+    if (!r || r.bottom < 0 || r.top > vh) continue;
+    el.animate([{ transform: `translateY(${dir * 72}px)`, opacity: .15 }, { transform: "none", opacity: 1 }],
+      { duration: 380, easing: "cubic-bezier(.16,.84,.3,1)" });
+  }
 }
 function scrubLand(e){
   const from = VIS.indexOf(EV[scrubShown]), to = VIS.indexOf(e);
   goTo(e, false);
-  if (scrubTouch && e.id !== scrubShown) arrive(from < 0 ? 1 : Math.sign(to - from));
+  if (scrubTouch && e.id !== scrubShown) arrive(from < 0 ? 1 : Math.sign(to - from), e);
   scrubShown = e.id;
 }
 function scrubTo(e, now){
@@ -995,7 +1001,9 @@ tlTrack.addEventListener("pointerdown", ev => {
   scrubShown = activeId;   // el hecho que la fila muestra ahora: de ahí sale la dirección del deslizamiento
   scrub = e; scrubTouch = ev.pointerType !== "mouse";
   stopGlide(true);
-  paintZone(ev.clientX - tlTrack.getBoundingClientRect().left);
+  // la zona de atención es para el mouse: con el dedo, mover decenas de marcas a la vez (en '19–'22 hay un mes cada
+  // pocos píxeles) hacía que Safari en el iPhone pasara cada marca a su propia capa y volviera a dibujar toda la página
+  if (!scrubTouch) paintZone(ev.clientX - tlTrack.getBoundingClientRect().left);
   updateTimeline(e._x, e);
   scrubTo(e, !scrubTouch); showTip(e);
 });
@@ -1003,7 +1011,8 @@ tlTrack.addEventListener("pointermove", ev => {
   const e = nearestAt(ev.clientX);
   // la aguja, la fecha y el año siguen al dedo en el momento; la fila llega después (ver scrubTo)
   if (scrub && e && e !== scrub) { scrub = e; updateTimeline(e._x, e); scrubTo(e); }
-  if (scrub || ev.pointerType === "mouse") { paintZone(ev.clientX - tlTrack.getBoundingClientRect().left); showTip(e); }
+  if (ev.pointerType === "mouse") paintZone(ev.clientX - tlTrack.getBoundingClientRect().left);
+  if (scrub || ev.pointerType === "mouse") showTip(e);
 });
 const endScrub = ev => {
   if (!scrub) return;
@@ -1030,7 +1039,7 @@ tlYears.addEventListener("click", ev => {
     if (!e) return;
     const from = VIS.indexOf(EV[activeId]);
     goTo(e, false);
-    arrive(from < 0 ? 1 : Math.sign(VIS.indexOf(e) - from));
+    arrive(from < 0 ? 1 : Math.sign(VIS.indexOf(e) - from), e);
     return;
   }
   const heading = document.getElementById(`y-${year}`)?.querySelector(".year");
