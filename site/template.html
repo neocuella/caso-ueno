@@ -193,8 +193,9 @@ i.fold{top:auto;height:4.75em;background:linear-gradient(to bottom,rgba(20,20,19
 .hint .h{display:none}
 .hint .v{display:inline}
 .yr,.yrow{display:contents}
-/* año: eje punteado con marca, igual que en escritorio */
-.year{width:var(--col);border-bottom:1px dashed #C4C8CE;scroll-margin:calc(84px + env(safe-area-inset-top,0px)) 24px 24px}
+/* el año y su cantidad de hechos viven en la línea de tiempo; en la columna el encabezado no se ve,
+   pero sigue ahí como destino de los botones de año */
+.year{width:var(--col);height:0;overflow:hidden;margin-bottom:-64px;scroll-margin:calc(84px + env(safe-area-inset-top,0px)) 24px 24px}
 .yl{position:relative;display:flex;flex-direction:column;gap:6px;padding:0 0 12px;color:var(--ink)}
 .yl::after{content:"";position:absolute;left:0;bottom:-6px;width:1px;height:11px;background:currentColor}
 .year small{display:block;font-family:var(--f-sans);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -356,9 +357,7 @@ html:has(.about[open]){overflow:hidden}
   .empty{align-self:center;margin-left:40px;width:440px}
   .yr{display:flex;flex-direction:column;flex:none}
   .yrow{display:flex;align-items:center;gap:88px;flex:1;min-height:0;padding:0 88px 0 24px}
-  /* el año y su cantidad de hechos viven en la línea de tiempo; en la fila el encabezado no se ve,
-     pero sigue ahí como destino de los botones de año */
-  .year{display:flex;width:auto;height:0;padding:0;overflow:hidden;border-bottom:0;scroll-margin:0}
+  .year{display:flex;width:auto;padding:0;margin:0;scroll-margin:0}
   .yl{flex-direction:row;align-items:baseline;gap:8px;padding:0 24px;color:#9AA1AB}
   .yl::after{display:none}
   .year b{font-family:var(--f-sans);font-size:12px;font-weight:600;letter-spacing:.06em}
@@ -1000,6 +999,16 @@ tlTrack.addEventListener("keydown", ev => {
 tlYears.addEventListener("click", ev => {
   const button = ev.target.closest("[data-year]");
   if (!button || button.disabled) return;
+  // en el celular las pilas lejanas todavía no tienen su alto real y un desplazamiento suave termina corto:
+  // se salta directo al primer hecho del año y se llega con el mismo deslizamiento que la línea de tiempo
+  if (!desktop.matches) {
+    const e = VIS.find(x => x.p.startsWith(button.dataset.year));
+    if (!e) return;
+    const from = VIS.indexOf(EV[activeId]);
+    goTo(e, false);
+    arrive(from < 0 ? 1 : Math.sign(VIS.indexOf(e) - from));
+    return;
+  }
   const heading = document.getElementById(`y-${button.dataset.year}`)?.querySelector(".year");
   if (!heading) return;
   stopGlide(true);
