@@ -276,6 +276,8 @@ html:has(.about[open]){overflow:hidden}
 .tl-now{flex:none;width:56px;display:flex;flex-direction:column;gap:4px}
 .tl-now b{font-family:var(--f-serif);font-weight:800;font-size:24px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .tl-now small{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+/* cuántos hechos tiene el año en pantalla: solo en escritorio (en el celular lo dice el encabezado de cada año) */
+.tl-now small #tl-n{display:none}
 .tl-axis{flex:1;min-width:0}
 /* eje: línea base, una rayita por mes y una más alta por año. La escala es mixta (ver el script):
    los años con más hechos son más anchos, así que las rayitas de año y mes son elementos ubicados uno por uno */
@@ -314,7 +316,9 @@ html:has(.about[open]){overflow:hidden}
   html,body{overflow:hidden;height:100%}
   .tl{position:fixed;top:0;left:0;right:0;gap:28px;border-bottom:0;
     padding:calc(18px + env(safe-area-inset-top,0px)) max(64px,env(safe-area-inset-right,0px)) 12px max(64px,env(safe-area-inset-left,0px))}
-  .tl-now{width:92px}
+  /* ancho fijo, para que el eje no cambie de tamaño cuando cambian la fecha o la cantidad */
+  .tl-now{width:150px}
+  .tl-now small #tl-n{display:inline}
   .tl-now b{font-size:34px}
   .tl-years button{font-size:11px}
   /* filtros: en escritorio van en línea dentro de la barra, sin cajón */
@@ -350,8 +354,9 @@ html:has(.about[open]){overflow:hidden}
   .empty{align-self:center;margin-left:40px;width:440px}
   .yr{display:flex;flex-direction:column;flex:none}
   .yrow{display:flex;align-items:center;gap:88px;flex:1;min-height:0;padding:0 88px 0 24px}
-  /* el año grande vive en la línea de tiempo; en la fila queda una etiqueta chica al comienzo de cada año */
-  .year{display:flex;width:auto;padding:4px 0 0;border-bottom:0;scroll-margin:0}
+  /* el año y su cantidad de hechos viven en la línea de tiempo; en la fila el encabezado no se ve,
+     pero sigue ahí como destino de los botones de año */
+  .year{display:flex;width:auto;height:0;padding:0;overflow:hidden;border-bottom:0;scroll-margin:0}
   .yl{flex-direction:row;align-items:baseline;gap:8px;padding:0 24px;color:#9AA1AB}
   .yl::after{display:none}
   .year b{font-family:var(--f-sans);font-size:12px;font-weight:600;letter-spacing:.06em}
@@ -363,7 +368,7 @@ html:has(.about[open]){overflow:hidden}
 </style>
 
 <nav class="tl" id="tl" aria-label="Línea de tiempo" hidden>
-  <div class="tl-now" aria-hidden="true"><b id="tl-y"></b><small id="tl-d"></small></div>
+  <div class="tl-now" aria-hidden="true"><b id="tl-y"></b><small><span id="tl-d"></span><span id="tl-n"></span></small></div>
   <div class="tl-axis">
     <div class="tl-track" id="tl-track" role="slider" tabindex="0" aria-label="Fecha del hecho en pantalla" aria-valuemin="1">
       <div class="tl-scale" id="tl-scale"></div>
@@ -880,6 +885,8 @@ function updateTimeline(pos, e){
   if (year === activeYear) return;
   activeYear = year;
   $("tl-y").textContent = year;
+  const n = VIS.filter(x => x.p.startsWith(year)).length;
+  $("tl-n").textContent = ` · ${n} ${n === 1 ? "hecho" : "hechos"}`;
   for (const b of tlYears.children) b.dataset.year === year ? b.setAttribute("aria-current", "true") : b.removeAttribute("aria-current");
   for (const g of rail.querySelectorAll(".yr")) g.classList.toggle("on", g.id === `y-${year}`);
 }
