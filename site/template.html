@@ -633,8 +633,9 @@ $("tl-scale").innerHTML = YEARS.flatMap(y => [
   ...Array.from({ length: 11 }, (_, m) => Date.UTC(y, m + 1, 1)).filter(t => t < TT1).map(t => `<u style="left:${tlAt(t).toFixed(3)}%"></u>`)
 ]).join("");
 // cada etiqueta ocupa el ancho de su año en la escala
-tlYears.innerHTML = YEARS.map(y => `<button type="button" data-year="${y}" aria-label="Ir a ${y}" style="flex-grow:${(yearEdge(y + 1) - yearEdge(y)).toFixed(4)}">${y}</button>`).join("");
-// los años angostos muestran '19 o nada (el botón sigue ahí, con su nombre para lectores de pantalla)
+tlYears.innerHTML = YEARS.map(y => `<button type="button" data-year="${y}" aria-label="Ir a ${y}" data-span="${y}" data-grow="${(yearEdge(y + 1) - yearEdge(y)).toFixed(4)}" style="flex-grow:${(yearEdge(y + 1) - yearEdge(y)).toFixed(4)}">${y}</button>`).join("");
+// los años angostos muestran '19; si ni eso entra, los años seguidos sin lugar se juntan en una sola etiqueta
+// ('19–'22) que ocupa el ancho de todos y lleva al primero que tenga hechos
 let fitW = 0;
 function fitYears(){
   const w = tlYears.clientWidth;
@@ -643,11 +644,33 @@ function fitYears(){
   // el texto tiene que entrar con un poco de aire a los costados, para que dos años vecinos no se toquen
   const range = document.createRange();
   const tight = b => { range.selectNodeContents(b); return range.getBoundingClientRect().width + 6 > b.clientWidth; };
-  for (const b of tlYears.children) {
+  const bs = [...tlYears.children];
+  for (const b of bs) {
+    b.style.display = ""; b.style.flexGrow = b.dataset.grow; b.dataset.span = b.dataset.year;
+    b.setAttribute("aria-label", `Ir a ${b.dataset.year}`);
     b.textContent = b.dataset.year;
     if (tight(b)) b.textContent = "’" + b.dataset.year.slice(2);
     if (tight(b)) b.textContent = "";
   }
+  for (let i = 0; i < bs.length; i++) {
+    let j = i;
+    while (j < bs.length && !bs[j].textContent) j++;
+    if (j - i > 1) {
+      const run = bs.slice(i, j), first = run[0], last = run[run.length - 1].dataset.year;
+      first.style.flexGrow = run.reduce((sum, b) => sum + +b.dataset.grow, 0);
+      for (const b of run.slice(1)) b.style.display = "none";
+      first.dataset.span = run.map(b => b.dataset.year).join(" ");
+      first.setAttribute("aria-label", `Ir a ${first.dataset.year}–${last}`);
+      first.textContent = `’${first.dataset.year.slice(2)}–’${last.slice(2)}`;
+      if (tight(first)) first.textContent = "";
+    }
+    i = Math.max(i, j);
+  }
+  yearsAvailable();
+}
+// los años sin hechos visibles no se pueden elegir (una etiqueta juntada, si ninguno de sus años los tiene)
+function yearsAvailable(){
+  for (const b of tlYears.children) b.disabled = !b.dataset.span.split(" ").some(y => VIS.some(x => x.p.startsWith(y)));
 }
 let VIS = [], activeYear = "", activeId = "";
 $("th").innerHTML = `<option value="">Todos los hilos</option>` + Object.entries(THREADS).map(([k, t]) => `<option value="${k}">${esc(t.label)}</option>`).join("");
@@ -691,9 +714,9 @@ function render(){
   VIS = list;
   const shown = new Set(list.map(e => e.id));
   for (const e of EVENTS) TICK[e.id].classList.toggle("off", !shown.has(e.id));
-  for (const b of tlYears.children) b.disabled = !groups.some(g => g.y === b.dataset.year);
   tl.hidden = !list.length;
   if (!tl.hidden) fitYears();
+  yearsAvailable();
   tlTrack.setAttribute("aria-valuemax", list.length);
   activeYear = ""; activeId = "";
   for (const g of groups) {
@@ -891,7 +914,7 @@ function updateTimeline(pos, e){
   $("tl-y").textContent = year;
   const n = VIS.filter(x => x.p.startsWith(year)).length;
   $("tl-n").textContent = `${n} ${n === 1 ? "hecho" : "hechos"}`;
-  for (const b of tlYears.children) b.dataset.year === year ? b.setAttribute("aria-current", "true") : b.removeAttribute("aria-current");
+  for (const b of tlYears.children) b.dataset.span.split(" ").includes(year) ? b.setAttribute("aria-current", "true") : b.removeAttribute("aria-current");
   for (const g of rail.querySelectorAll(".yr")) g.classList.toggle("on", g.id === `y-${year}`);
 }
 function goTo(e, smooth){
@@ -999,17 +1022,18 @@ tlTrack.addEventListener("keydown", ev => {
 tlYears.addEventListener("click", ev => {
   const button = ev.target.closest("[data-year]");
   if (!button || button.disabled) return;
+  const year = button.dataset.span.split(" ").find(y => VIS.some(x => x.p.startsWith(y)));
   // en el celular las pilas lejanas todavía no tienen su alto real y un desplazamiento suave termina corto:
   // se salta directo al primer hecho del año y se llega con el mismo deslizamiento que la línea de tiempo
   if (!desktop.matches) {
-    const e = VIS.find(x => x.p.startsWith(button.dataset.year));
+    const e = VIS.find(x => x.p.startsWith(year));
     if (!e) return;
     const from = VIS.indexOf(EV[activeId]);
     goTo(e, false);
     arrive(from < 0 ? 1 : Math.sign(VIS.indexOf(e) - from));
     return;
   }
-  const heading = document.getElementById(`y-${button.dataset.year}`)?.querySelector(".year");
+  const heading = document.getElementById(`y-${year}`)?.querySelector(".year");
   if (!heading) return;
   stopGlide(true);
   heading.scrollIntoView({ behavior: reduced.matches ? "auto" : "smooth", inline: "start", block: desktop.matches ? "nearest" : "start" });
