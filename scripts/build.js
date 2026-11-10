@@ -235,12 +235,8 @@ fs.writeFileSync(path.join(root, "dist", "_headers"), [
   // solo los archivos con nombre por contenido: si cambian, cambia su nombre, así que no hace falta volver a preguntar
   "/assets/v/*",
   "  Cache-Control: public, max-age=31536000, immutable",
-  // la portada ya trae el Web Analytics en su <head>; no-transform le dice a Cloudflare que no reescriba la respuesta
-  // para inyectarlo otra vez (la inyección automática es de toda la zona rickovelar.com, compartida con otros sitios,
-  // y no se puede apagar para un solo subdominio). Sin reescritura la respuesta conserva su ETag y revalida con 304.
-  // El resto es el Cache-Control que Cloudflare pone por defecto a los archivos estáticos.
-  "/",
-  "  Cache-Control: public, max-age=0, must-revalidate, no-transform",
+  // (no usar Cache-Control: no-transform en la portada para frenar la inyección del Web Analytics: Cloudflare tampoco
+  // comprime la respuesta y la página pasa de ~175 kB a 671 kB en la primera visita)
   ""
 ].join("\n"));
 // al publicar dist/ en Cloudflare, el fragmento artifact.html no se sube (solo sirve para Artifacts)
