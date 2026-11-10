@@ -2,17 +2,25 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preload" href="assets/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/Newsreader-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/papel.webp" as="image" fetchpriority="high">
 <style>
 /* Tipografías servidas desde assets/, sin servicios externos (licencia SIL OFL 1.1, ver assets/*-OFL.txt):
    Geist (Vercel) para el texto y la interfaz; Newsreader para titulares, cabeceras y títulos.
-   Las dos son variables; Newsreader se divide por alfabeto (latin, latin-ext) y la cursiva solo se baja si se usa. */
+   Las dos son variables; Newsreader se divide por alfabeto (latin, latin-ext). Al publicar, scripts/build.js
+   les agrega al nombre un resumen de su contenido (assets/v/…), para que el navegador las guarde sin volver a preguntar. */
 @font-face{font-family:"Geist";src:url(assets/Geist-Variable.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
 @font-face{font-family:"Newsreader";src:url(assets/Newsreader-latin.woff2) format("woff2");font-weight:400 800;font-style:normal;font-display:swap;
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+/* el guaraní (₲) sale de un recorte de latin-ext con solo ese signo (2 kB): así el archivo latin-ext entero (87 kB)
+   se baja solo si un texto trae otra letra de ese alfabeto */
+@font-face{font-family:"Newsreader";src:url(assets/Newsreader-guarani.woff2) format("woff2");font-weight:400 800;font-style:normal;font-display:swap;
+  unicode-range:U+20B2}
 @font-face{font-family:"Newsreader";src:url(assets/Newsreader-latin-ext.woff2) format("woff2");font-weight:400 800;font-style:normal;font-display:swap;
-  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
-@font-face{font-family:"Newsreader";src:url(assets/Newsreader-Italic-latin.woff2) format("woff2");font-weight:400 800;font-style:italic;font-display:swap;
-  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20B1,U+20B3-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* la cursiva solo aparece en la firma de la portada ("Por Ricardo Ovelar."): es un recorte con esas letras, en peso 400
+   (conserva el eje de tamaño óptico). Si se agrega otro texto en cursiva, hay que volver a recortarla con sus letras */
+@font-face{font-family:"Newsreader";src:url(assets/Newsreader-Italic-firma.woff2) format("woff2");font-weight:400;font-style:italic;font-display:swap;
+  unicode-range:U+0020,U+002E,U+004F,U+0050,U+0052,U+0061,U+0063,U+0064,U+0065,U+0069,U+006C,U+006F,U+0072,U+0076}
 /* Layout: un puesto de diarios. Cada fuente es un diario sábana doblado; cada hecho, una pila.
    Escritorio: fila horizontal con snap. Móvil (<900px): columna vertical. Filtros en una píldora fija abajo.
    Tema único claro a propósito: es papel sobre blanco. */
@@ -21,7 +29,7 @@
   --t-banco:#B5245A; --t-gobierno:#1B6EC2; --t-congreso:#7E3BB0; --t-fondos:#2F7D32; --t-supervision:#C2550A;
   --f-serif:"Newsreader",Georgia,"Times New Roman",serif;
   --f-sans:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --noise:none; --hito:#C8352A;
+  --hito:#C8352A;
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -59,7 +67,7 @@ button,select,input{font:inherit;color:inherit}
 /* hoja trasera: la mitad suelta del diario doblado */
 .sheet-back{position:absolute;left:0;right:-1.625em;top:-1.3125em;bottom:0;filter:drop-shadow(0 -2px 5px rgba(20,20,19,.26)) drop-shadow(1px 1px 2px rgba(20,20,19,.18));pointer-events:none}
 .sheet-back.sm{right:-1em;top:-.5625em}
-.sb-shape{position:absolute;inset:0;overflow:hidden;background:linear-gradient(to right,var(--tint,#F4F1EA) 0%,color-mix(in srgb,var(--tint,#F4F1EA),#000 1%) 60%,color-mix(in srgb,var(--tint,#F4F1EA),#000 3.5%) 100%);
+.sb-shape{position:absolute;inset:0;overflow:hidden;background:var(--nz) 0 0/160px 160px,url(assets/papel.webp) center/cover,linear-gradient(to right,var(--tint,#F4F1EA) 0%,color-mix(in srgb,var(--tint,#F4F1EA),#000 1%) 60%,color-mix(in srgb,var(--tint,#F4F1EA),#000 3.5%) 100%);
   clip-path:polygon(2.375em calc(.375em + var(--ly,0em)),2.4em calc(.2125em + var(--ly,0em)),2.469em calc(.094em + var(--ly,0em)),2.588em calc(.025em + var(--ly,0em)),2.75em calc(0em + var(--ly,0em)),
     15% calc(.12em*var(--sg,1) + var(--ly,0em)*0.85 + var(--ty,0em)*0.15),25% calc(.267em*var(--sg,1) + var(--ly,0em)*0.75 + var(--ty,0em)*0.25),35% calc(.386em*var(--sg,1) + var(--ly,0em)*0.65 + var(--ty,0em)*0.35),45% calc(.478em*var(--sg,1) + var(--ly,0em)*0.55 + var(--ty,0em)*0.45),55% calc(.542em*var(--sg,1) + var(--ly,0em)*0.45 + var(--ty,0em)*0.55),65% calc(.578em*var(--sg,1) + var(--ly,0em)*0.35 + var(--ty,0em)*0.65),75% calc(.586em*var(--sg,1) + var(--ly,0em)*0.25 + var(--ty,0em)*0.75),85% calc(.567em*var(--sg,1) + var(--ly,0em)*0.15 + var(--ty,0em)*0.85),92% calc(.537em*var(--sg,1) + var(--ly,0em)*0.08 + var(--ty,0em)*0.92),
     calc(100% - 1.3125em - .625em - var(--tx,0em)) calc(.5em + var(--ty,0em)),calc(100% - 1.044em - .625em - var(--tx,0em)) calc(.5375em + var(--ty,0em)),calc(100% - .8625em - .625em - var(--tx,0em)) calc(.656em + var(--ty,0em)),calc(100% - .7625em - .625em - var(--tx,0em)) calc(.85em + var(--ty,0em)),calc(100% - .756em - .625em - var(--tx,0em)) calc(1.119em + var(--ty,0em)),
@@ -73,17 +81,16 @@ button,select,input{font:inherit;color:inherit}
 .sheet{position:relative;overflow:hidden;background:linear-gradient(to right,var(--tint,#F4F1EA) 0%,color-mix(in srgb,var(--tint,#F4F1EA),#000 1%) 60%,color-mix(in srgb,var(--tint,#F4F1EA),#000 3.5%) 100%);
   border:1px solid #E1DED6;border-bottom-color:#CFCBC0;border-radius:0 0 .5625em .5625em;box-shadow:0 -3px 12px -2px rgba(20,20,19,.32),2px -1px 4px -1px rgba(20,20,19,.20)}
 .sheet > *:not(i){position:relative}
-/* Capas del papel SIN modos de fusión (rendimiento): el tinte va en el fondo de la hoja y la textura y el ruido
-   son imágenes negras con transparencia generadas al cargar. Negro con alfa (1 − gris) da el mismo resultado
-   que "multiply" con una textura gris, pero sin obligar a la GPU a mezclar ~2.000 capas en cada cuadro. */
-i.tex,i.nz,i.fold,i.dark{position:absolute;inset:0;pointer-events:none}
-i.tex{background:var(--paper,none) center/cover;opacity:.48}
-i.nz{background-image:var(--noise);background-size:160px 160px;opacity:.14}
-/* respaldo si no se pudo convertir la textura: vuelve la versión con fusión */
-html.blend i.tex{background-image:url(assets/papel.jpg);mix-blend-mode:multiply}
-i.nz.strong{opacity:.36}
-i.dark{background:linear-gradient(to right,rgba(20,20,19,0) 55%,rgba(20,20,19,.07) 100%)}
-i.fold{top:auto;height:4.75em;background:linear-gradient(to bottom,rgba(20,20,19,0) 0%,rgba(20,20,19,.06) 40%,rgba(20,20,19,.17) 75%,rgba(20,20,19,.34) 100%)}
+/* Capas del papel SIN modos de fusión (rendimiento). Sobre el tinte del fondo, en un solo elemento (i.tex) o, en la hoja
+   suelta, en el fondo de la propia forma: la textura (papel.webp: negra con transparencia, alfa = (255 − gris) × 0,48,
+   generada una vez a partir de la foto, ver CREDITS.md en site/assets), el ruido (negro con transparencia, generado al cargar)
+   y, en la hoja, la sombra del pliegue abajo. Negro con alfa da el mismo resultado que "multiply" con una textura gris,
+   pero sin obligar a la GPU a mezclar ~2.000 capas en cada cuadro. La textura de la hoja va en un elemento y no en el
+   fondo de .sheet para que cubra el borde igual que antes (un fondo queda por debajo del borde). */
+:root{--nz:none}
+/* el pliegue ocupa los últimos 4,75em; el degradado cubre todo el elemento (paradas medidas desde abajo) para que
+   el navegador no redondee la posición de un fondo más chico */
+i.tex{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(20,20,19,0) calc(100% - 4.75em),rgba(20,20,19,.06) calc(100% - 2.85em),rgba(20,20,19,.17) calc(100% - 1.1875em),rgba(20,20,19,.34) 100%),var(--nz) 0 0/160px 160px,url(assets/papel.webp) center/cover}
 
 .front .sheet{display:flex;flex-direction:column;gap:.5em;padding:.875em 1.5em 1.625em}
 .dateline{display:flex;justify-content:space-between;gap:1em;align-items:baseline;font-size:.53em;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--ink);padding-bottom:.45em;white-space:nowrap}
@@ -193,6 +200,7 @@ i.fold{top:auto;height:4.75em;background:linear-gradient(to bottom,rgba(20,20,19
 .hint .h{display:none}
 .hint .v{display:inline}
 .yr,.yrow{display:contents}
+.yr[hidden]{display:none}
 /* el año y su cantidad de hechos viven en la línea de tiempo; en la columna el encabezado no se ve,
    pero sigue ahí como destino de los botones de año */
 .year{width:var(--col);height:0;overflow:hidden;margin-bottom:-64px;scroll-margin:calc(84px + env(safe-area-inset-top,0px)) 24px 24px}
@@ -467,37 +475,25 @@ EVENTS.sort((a, b) => a.p.localeCompare(b.p) || a.d.localeCompare(b.d) || (a.o |
 const OUTLETS = new Set(EVENTS.flatMap(e => e.src.map(s => mast(s.o).name)));
 const NSRC = EVENTS.reduce((n, e) => n + e.src.length, 0);
 
-/* ---------- ruido y textura de papel, generados una vez (negro con transparencia, sin fusión) ---------- */
+/* ---------- ruido del papel, generado una vez (negro con transparencia, sin fusión) ----------
+   cada punto tiene alfa al azar entre 0 y 54, por la opacidad de la capa (0,14), ya aplicada aquí */
 try {
   const c = document.createElement("canvas"); c.width = c.height = 160;
   const g = c.getContext("2d"), im = g.createImageData(160, 160);
-  for (let i = 0; i < im.data.length; i += 4) { im.data[i] = im.data[i+1] = im.data[i+2] = 0; im.data[i+3] = Math.random() * 55 | 0; }
+  for (let i = 0; i < im.data.length; i += 4) { im.data[i] = im.data[i+1] = im.data[i+2] = 0; im.data[i+3] = (Math.random() * 55 | 0) * .14; }
   g.putImageData(im, 0, 0);
-  document.documentElement.style.setProperty("--noise", `url(${c.toDataURL()})`);
+  // como dirección blob: y no data: (~40 kB de texto): var(--nz) se resuelve en cada hoja al dibujarla, y copiar
+  // y volver a leer ese texto en cada una costaba más de la mitad del recálculo de estilos al saltar entre pilas
+  const b64 = atob(c.toDataURL().split(",")[1]), bytes = new Uint8Array(b64.length);
+  for (let i = 0; i < b64.length; i++) bytes[i] = b64.charCodeAt(i);
+  document.documentElement.style.setProperty("--nz", `url(${URL.createObjectURL(new Blob([bytes], { type: "image/png" }))})`);
 } catch (_) {}
-(function paperTexture(){
-  const root = document.documentElement, img = new Image();
-  img.decoding = "async";
-  img.onload = () => {
-    try {
-      const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
-      const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(img, 0, 0);
-      const d = g.getImageData(0, 0, c.width, c.height), a = d.data;
-      for (let i = 0; i < a.length; i += 4) { const y = .299 * a[i] + .587 * a[i+1] + .114 * a[i+2]; a[i] = a[i+1] = a[i+2] = 0; a[i+3] = 255 - y; }
-      g.putImageData(d, 0, 0);
-      c.toBlob(b => b ? root.style.setProperty("--paper", `url(${URL.createObjectURL(b)})`) : root.classList.add("blend"), "image/png");
-    } catch (_) { root.classList.add("blend"); }
-  };
-  img.onerror = () => root.classList.add("blend");
-  img.src = "assets/papel.jpg";
-})();
 
 /* ---------- una pila ---------- */
 const SLOTS = [{ l: 2.25, w: 86.5, r: 1.4 }, { l: 1.5, w: 90.4, r: -1.1 }, { l: .75, w: 95.2, r: .7 }];
 const CLIP_D = "M8 21V49a3.5 3.5 0 0 0 7 0V9a5.5 5.5 0 0 0-11 0v42.5a7.5 7.5 0 0 0 15 0V15";
 const CLIP = `<svg class="clip" viewBox="0 0 23 66" aria-hidden="true"><path d="${CLIP_D}" stroke="#8E2018" stroke-width="3.4"/><path d="${CLIP_D}" stroke="var(--hito)" stroke-width="2.5"/><path d="${CLIP_D}" stroke="rgba(255,255,255,.5)" stroke-width=".7" transform="translate(-.45 -.3)"/></svg>`;
 const CLIP_ICON = `<svg viewBox="0 0 23 66" aria-hidden="true"><path d="${CLIP_D}" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg>`;
-const LAYERS = `<i class="tex"></i><i class="nz"></i>`;
 /* forma de la hoja suelta: cada papel de la pila toma una variante distinta (esquina corrida a la izquierda,
    caída, levantada, borde más plano o más curvo) con un leve azar fijo por pila. Valores en em de la hoja chica:
    [corrimiento de la esquina derecha hacia adentro, caída de esa esquina, caída de la esquina izquierda, curvatura] */
@@ -509,7 +505,7 @@ function shapeVars(seed, k, big){
   const kx = big ? 1.6 : 1, ky = big ? 2.2 : 1;
   return `--tx:${Math.max(big ? 0 : -1, (sh[0] + j(0)) * kx).toFixed(3)}em;--ty:${((sh[1] + j(1)) * ky).toFixed(3)}em;--ly:${((sh[2] + j(2)) * ky).toFixed(3)}em;--sg:${(sh[3] + j(3) * 3).toFixed(2)}`;
 }
-const BACKSHEET = (cls, vars) => `<div class="sheet-back ${cls}" style="${vars}"><div class="sb-shape"><i class="tex"></i><i class="nz"></i></div></div>`;
+const BACKSHEET = (cls, vars) => `<div class="sheet-back ${cls}" style="${vars}"><div class="sb-shape"></div></div>`;
 
 // alto estimado de una pila sin dibujar (medido sobre las pilas reales): papeles de atrás, titular, copete y pie
 function estHeight(nBacks, s){
@@ -529,7 +525,7 @@ function pileHTML(e){
     const bBody = b.l ? `<div class="body lede">${esc(b.l)}</div>` : `<div class="body">${greek(e.id + b.u)}</div>`;
     return `<button type="button" class="paper back" data-pick="${si}" aria-label="Traer al frente: ${esc(bm.name)}"
       style="left:${sl.l}em;width:${sl.w}%;top:${(k * 3.3 + .6).toFixed(2)}em;--r:${sl.r}deg;--tint:${tint(bm.name)}">
-      ${BACKSHEET("sm", shapeVars(e.id, si, false))}<div class="sheet">${LAYERS}<i class="fold"></i>
+      ${BACKSHEET("sm", shapeVars(e.id, si, false))}<div class="sheet"><i class="tex"></i>
       <div class="mast" style="font-size:${mastSize(bm.name, false)}em">${esc(bm.name)}</div>${bHead}${bBody}</div></button>`;
   }).join("");
   const head = s.h
@@ -549,7 +545,7 @@ function pileHTML(e){
   return `<article class="pile${e.key ? " key" : ""}" id="e-${e.id}" data-id="${e.id}" style="--c:var(${t.c});--est:${estHeight(backs.length, s)}" aria-label="${esc(shortDate(e.p)  + (e.key ? ", hito" : "") + ", " + N + (N === 1 ? " fuente" : " fuentes"))}">
     <div class="stack" style="padding-top:${(backs.length * 3.3 + 1.6).toFixed(2)}em">${backHTML}
       <div class="paper front" data-src="${f}" style="--tint:${tint(m.name)}">${BACKSHEET("", shapeVars(e.id, f, true))}${e.key ? CLIP : ""}
-        <div class="sheet">${LAYERS}<i class="fold"></i>
+        <div class="sheet"><i class="tex"></i>
           <div class="dateline"><span>${esc(kind)}</span><span>${esc(longDate(s.d))}</span><span>${s.h ? `${f + 1} de ${N} fuentes` : "Sin titular registrado"}</span></div>
           <div class="mast" style="font-size:${mastSize(m.name, true)}em">${esc(m.name)}</div>
           ${head}${body}
@@ -692,7 +688,6 @@ function frontForQuery(list){
     if (i > 0) { const N = ORDER[e.id].length; DECK[e.id] = [...Array(N).keys()].map(k => (k + i) % N); SEARCH_FRONT.add(e.id); }
   }
 }
-let heroShown = false;
 /* resaltador del título de la portada: los mismos trazos que los titulares, una vez cargadas las tipografías */
 function heroStrokes(delay){
   const h1 = rail.querySelector(".intro h1"), mk = h1 && h1.querySelector(".mk");
@@ -704,36 +699,72 @@ function heroStrokes(delay){
     setTimeout(() => h1.parentElement.classList.add("lit"), delay);
   });
 }
+/* Las pilas se arman una sola vez, todas; los filtros y el buscador solo ocultan las que no coinciden (hidden) y rehacen
+   el contenido de las que cambian de diario al frente. Antes cada tecla del buscador volvía a armar ~20.000 elementos. */
+const PILE = {}, DREW = {};      // id → <article> de la pila; id → mazo con que se dibujó
+let PILES = [];                  // pilas visibles, en orden: lo que miden markYear, markFocus, settle y step
+const deckKey = id => (DECK[id] || []).join(",");
+let YR = [];
+function buildRail(){
+  const groups = [];
+  for (const e of EVENTS) { const y = e.p.slice(0, 4); if (!groups.length || groups[groups.length - 1].y !== y) groups.push({ y, items: [] }); groups[groups.length - 1].items.push(e); }
+  rail.innerHTML = introHTML(true) + groups.map(g => `<section class="yr" id="y-${g.y}" aria-label="${g.y}"><div class="year"><span class="yl"><small>${g.items.length} ${g.items.length === 1 ? "hecho" : "hechos"}</small><b>${g.y}</b></span></div><div class="yrow">${g.items.map(pileHTML).join("")}</div></section>`).join("") +
+    `<p class="empty" hidden>Ningún hecho coincide con los filtros. <button type="button" data-reset>Ver todo</button></p>`;
+  for (const e of EVENTS) { PILE[e.id] = document.getElementById("e-" + e.id); DREW[e.id] = deckKey(e.id); }
+  YR = groups.map(g => ({ y: g.y, el: document.getElementById("y-" + g.y), n: g.items.length }));
+  heroStrokes(520);
+  observeStacks(rail);
+  // la portada se arma una sola vez: terminada la entrada se quita la clase, para que sus animaciones (que se quedan
+  // en su estado final) no sigan vivas
+  const intro = rail.querySelector(".intro");
+  intro.addEventListener("animationend", ev => { if (ev.target === intro.lastElementChild) intro.classList.remove("enter"); });
+}
+// rehace el contenido de una pila en su lugar: el elemento se conserva, con su estado de dibujo (content-visibility) y su tamaño
+function fillPile(el, e){
+  const tpl = document.createElement("template");
+  tpl.innerHTML = pileHTML(e);
+  const fresh = tpl.content.firstElementChild;
+  for (const a of ["class", "style", "aria-label"]) el.setAttribute(a, fresh.getAttribute(a));
+  // la pila vieja deja de observarse (si no, el observador y la inclinación siguen sosteniendo nodos que ya no están)
+  for (const st of el.querySelectorAll(".stack")) { stackObserver?.unobserve(st); visibleStacks.delete(st); }
+  el.replaceChildren(...fresh.childNodes);
+  DREW[e.id] = deckKey(e.id);
+  observeStacks(el);
+}
+let qTimer = 0;
 function render(){
+  clearTimeout(qTimer);
   const list = visible();
   frontForQuery(list);
-  let html = introHTML(!heroShown);
-  const groups = [];
-  for (const e of list) { const y = e.p.slice(0, 4); if (!groups.length || groups[groups.length - 1].y !== y) groups.push({ y, items: [] }); groups[groups.length - 1].items.push(e); }
+  if (!rail.firstElementChild) buildRail();
   // los hechos filtrados quedan como marcas tenues; los años sin hechos visibles no se pueden elegir
   VIS = list;
   const shown = new Set(list.map(e => e.id));
-  for (const e of EVENTS) TICK[e.id].classList.toggle("off", !shown.has(e.id));
+  for (const e of EVENTS) {
+    const on = shown.has(e.id), el = PILE[e.id];
+    TICK[e.id].classList.toggle("off", !on);
+    if (el.hidden === on) el.hidden = !on;
+    if (on && DREW[e.id] !== deckKey(e.id)) fillPile(el, e);
+  }
+  PILES = list.map(e => PILE[e.id]);
+  for (const g of YR) {
+    const n = list.reduce((k, e) => k + (e.p.startsWith(g.y) ? 1 : 0), 0);
+    if (g.el.hidden === !!n) g.el.hidden = !n;
+    if (n && n !== g.n) { g.n = n; g.el.querySelector(".yl small").textContent = `${n} ${n === 1 ? "hecho" : "hechos"}`; }
+  }
+  rail.querySelector(".empty").hidden = !!list.length;
   tl.hidden = !list.length;
   if (!tl.hidden) fitYears();
   yearsAvailable();
   tlTrack.setAttribute("aria-valuemax", list.length);
   activeYear = ""; activeId = "";
-  for (const g of groups) {
-    const n = g.items.length;
-    html += `<section class="yr" id="y-${g.y}" aria-label="${g.y}"><div class="year"><span class="yl"><small>${n} ${n === 1 ? "hecho" : "hechos"}</small><b>${g.y}</b></span></div><div class="yrow">${g.items.map(pileHTML).join("")}</div></section>`;
-  }
-  if (!list.length) html += `<p class="empty">Ningún hecho coincide con los filtros. <button type="button" data-reset>Ver todo</button></p>`;
-  rail.innerHTML = html;
-  heroStrokes(heroShown ? 0 : 520); heroShown = true;
-  if (typeof observeStacks === "function") observeStacks(rail);
   $("count").textContent = `${list.length} de ${EVENTS.length} hechos`;
   const active = (state.q.trim() ? 1 : 0) + (state.th ? 1 : 0) + (state.tp ? 1 : 0) + (state.key ? 1 : 0);
   $("nf").textContent = active; $("nf").hidden = !active; $("clear").hidden = !active;
   $("sheet-go").textContent = `Ver ${list.length} ${list.length === 1 ? "hecho" : "hechos"}`;
-  $("th").value = state.th; $("tp").value = state.tp; $("q").value = state.q;
+  $("th").value = state.th; $("tp").value = state.tp; if ($("q").value !== state.q) $("q").value = state.q;
   $("hitos").setAttribute("aria-pressed", state.key);
-  if (typeof markYear === "function") requestAnimationFrame(markYear);
+  requestAnimationFrame(markYear);
 }
 function setFilter(patch){
   Object.assign(state, patch);
@@ -743,22 +774,14 @@ function setFilter(patch){
   rail.scrollTo({ left: 0, top: 0 }); window.scrollTo(0, 0);
 }
 function rerenderPile(id, focusSel, from){
-  const el = document.getElementById("e-" + id), e = EVENTS.find(x => x.id === id);
+  const el = PILE[id], e = EV[id];
   if (!el || !e) return;
   const before = from != null && !reduced.matches ? snapshot(el) : null;
-  // se cambia el contenido, no el elemento: la pila conserva su estado de dibujo (content-visibility) y su tamaño
-  const tpl = document.createElement("template");
-  tpl.innerHTML = pileHTML(e);
-  const fresh = tpl.content.firstElementChild;
-  for (const a of ["class", "style", "aria-label"]) el.setAttribute(a, fresh.getAttribute(a));
-  // la pila vieja deja de observarse (si no, el observador y la inclinación siguen sosteniendo nodos que ya no están)
-  for (const st of el.querySelectorAll(".stack")) { stackObserver?.unobserve(st); visibleStacks.delete(st); }
-  el.replaceChildren(...fresh.childNodes);
-  const np = el;
-  if (np && typeof observeStacks === "function") { observeStacks(np); if (tilt) setTilt(tilt, true); }
-  if (np && before) { el._busy = performance.now() + SHUFFLE_MS; shuffle(np, before, from); setTimeout(markFocus, SHUFFLE_MS); }
+  fillPile(el, e);
+  if (tilt) setTilt(tilt, true);
+  if (before) { el._busy = performance.now() + SHUFFLE_MS; shuffle(el, before, from); setTimeout(markFocus, SHUFFLE_MS); }
   else requestAnimationFrame(markFocus);
-  if (focusSel) document.querySelector(`#e-${CSS.escape(id)} ${focusSel}`)?.focus({ preventScroll: true });
+  if (focusSel) el.querySelector(focusSel)?.focus({ preventScroll: true });
 }
 
 /* ---------- cambio de diario: la pila como un mazo en profundidad ----------
@@ -889,7 +912,14 @@ rail.addEventListener("click", ev => {
   if (tp) { setFilter({ tp: tp.dataset.topic }); return; }
   if (ev.target.closest("[data-reset]")) setFilter({ q: "", th: "", tp: "", key: false });
 });
-$("q").addEventListener("input", ev => { state.q = ev.target.value; render(); });
+// el buscador filtra apenas se dibujó la tecla: la letra aparece enseguida y el filtrado va en la tarea siguiente;
+// las teclas que llegan en el mismo cuadro se juntan en un solo filtrado. (Esperar a que se deje de teclear, en cambio,
+// demoraba el dibujo de cada tecla hasta después del filtrado.)
+let qFrame = 0;
+$("q").addEventListener("input", ev => {
+  state.q = ev.target.value;
+  if (!qFrame) qFrame = requestAnimationFrame(() => { qFrame = 0; clearTimeout(qTimer); qTimer = setTimeout(render, 0); });
+});
 $("th").addEventListener("change", ev => setFilter({ th: ev.target.value }));
 $("tp").addEventListener("change", ev => setFilter({ tp: ev.target.value }));
 $("hitos").addEventListener("click", () => setFilter({ key: !state.key }));
@@ -915,7 +945,6 @@ function updateTimeline(pos, e){
   const n = VIS.filter(x => x.p.startsWith(year)).length;
   $("tl-n").textContent = `${n} ${n === 1 ? "hecho" : "hechos"}`;
   for (const b of tlYears.children) b.dataset.span.split(" ").includes(year) ? b.setAttribute("aria-current", "true") : b.removeAttribute("aria-current");
-  for (const g of rail.querySelectorAll(".yr")) g.classList.toggle("on", g.id === `y-${year}`);
 }
 function goTo(e, smooth){
   document.getElementById("e-" + e.id)?.scrollIntoView({ behavior: smooth && !reduced.matches ? "smooth" : "auto", inline: "center", block: desktop.matches ? "nearest" : "center" });
@@ -1141,7 +1170,7 @@ function settle(v0){
   // al frenar, la pila más cercana al centro se acomoda con un resorte: pasa apenas de largo y rebota
   const mid = rail.scrollLeft + rail.clientWidth / 2;
   let best = null, dist = Infinity;
-  for (const el of rail.querySelectorAll(".pile")) { const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid); if (d < dist) { dist = d; best = el; } }
+  for (const el of PILES) { const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid); if (d < dist) { dist = d; best = el; } }
   const done = () => { glideRaf = 0; setTilt(0, true); rail.classList.remove("dragging"); scheduleFocus(); };
   if (!best || dist > rail.clientWidth * .3 || rail.scrollLeft <= 40) { done(); return; }
   const target = Math.max(0, Math.min(rail.scrollWidth - rail.clientWidth, best.offsetLeft + best.offsetWidth / 2 - rail.clientWidth / 2));
@@ -1234,7 +1263,7 @@ window.addEventListener("blur", () => {
 rail.addEventListener("dragstart", ev => { if (desktop.matches) ev.preventDefault(); });
 
 function step(dir){
-  const items = [...rail.querySelectorAll(".intro,.pile,.empty")];
+  const items = [...rail.querySelectorAll(".intro,.pile:not([hidden]),.empty:not([hidden])")];
   const mid = desktop.matches ? rail.scrollLeft + rail.clientWidth / 2 : window.scrollY + window.innerHeight / 2;
   const center = el => desktop.matches ? el.offsetLeft + el.offsetWidth / 2 : el.offsetTop + el.offsetHeight / 2;
   let i = items.findIndex(el => center(el) > mid + 4);
@@ -1252,7 +1281,7 @@ document.addEventListener("keydown", ev => {
 let yrRaf = 0;
 function markYear(){
   yrRaf = 0;
-  const piles = rail.querySelectorAll(".pile");
+  const piles = PILES;            // lista de render(): no se vuelve a buscar en cada cuadro
   // mientras se arrastra sobre la barra, la aguja la maneja el arrastre, no el desplazamiento de la fila
   if (piles.length && !scrub) {
     const horiz = desktop.matches;
@@ -1271,7 +1300,7 @@ function markYear(){
 function markFocus(){
   const cx = innerWidth / 2, cy = (innerHeight - 80) / 2;
   let best = null, dist = Infinity;
-  for (const p of rail.querySelectorAll(".pile")) {
+  for (const p of PILES) {
     const r = p.getBoundingClientRect();
     const d = desktop.matches ? Math.abs(r.left + r.width / 2 - cx) : Math.abs(r.top + r.height / 2 - cy);
     if (d < dist) { dist = d; best = p; }
@@ -1324,7 +1353,12 @@ const restroke = () => { rail.querySelectorAll(".pile.focus").forEach(p => p.cla
 // esos cambios no mueven nada de lugar, así que solo se redibuja cuando cambia el ancho
 let lastVW = innerWidth;
 window.addEventListener("resize", () => { if (innerWidth === lastVW) return; lastVW = innerWidth; restroke(); });
-document.fonts?.ready.then(() => { fitW = 0; restroke(); });
+document.fonts?.ready.then(() => {
+  fitW = 0; restroke();
+  // Chrome no vuelve a ubicar el texto de un <select> dibujado antes de que llegara Geist (queda 1 px más abajo):
+  // se lo vuelve a armar una vez, ya con la tipografía
+  for (const s of document.querySelectorAll(".filters select")) { s.style.display = "none"; void s.offsetWidth; s.style.display = ""; }
+});
 
 /* ---------- arranque ---------- */
 render();

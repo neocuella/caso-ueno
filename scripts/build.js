@@ -71,7 +71,24 @@ const data = [
   "const EVENTS = [\n" + EVENTS.map(e => JSON.stringify(e)).join(",\n") + "\n];"
 ].join("\n");
 
-const tpl = fs.readFileSync(path.join(root, "site", "template.html"), "utf8");
+/* Tipografías y textura con nombre por contenido: assets/v/<nombre>.<resumen>.<ext>. Como el nombre cambia cuando
+   cambia el archivo, se sirven con caché de un año sin volver a preguntar (ver _headers, más abajo). Las referencias
+   "assets/<archivo>" de la plantilla se reescriben con el nombre nuevo. Íconos y og.png mantienen su dirección fija. */
+const crypto = require("crypto");
+const assets = path.join(root, "site", "assets");
+const HASHED = /\.(woff2|webp)$/i;
+const VERSIONED = {};
+for (const f of fs.existsSync(assets) ? fs.readdirSync(assets) : []) {
+  if (!HASHED.test(f)) continue;
+  const h = crypto.createHash("sha256").update(fs.readFileSync(path.join(assets, f))).digest("hex").slice(0, 10);
+  VERSIONED[f] = `assets/v/${f.replace(/(\.[^.]+)$/, `.${h}$1`)}`;
+}
+const versioned = s => s.replace(/assets\/([\w.-]+\.(?:woff2|webp))\b/g, (m, f) => {
+  if (!VERSIONED[f]) throw new Error(`site/template.html usa assets/${f}, que no está en site/assets/`);
+  return VERSIONED[f];
+});
+
+const tpl = versioned(fs.readFileSync(path.join(root, "site", "template.html"), "utf8"));
 if (!tpl.includes("/*__DATA__*/")) throw new Error("site/template.html no contiene el marcador /*__DATA__*/");
 fs.mkdirSync(path.join(root, "dist"), { recursive: true });
 const page = tpl.replace("/*__DATA__*/", () => data);
@@ -96,6 +113,7 @@ const ldDataset = {
   dateModified: META.updated,
   distribution: [{ "@type": "DataDownload", encodingFormat: "application/json", contentUrl: `${SITE}/data.json` }]
 };
+const CF_BEACON_TOKEN = "e866f8fb5d1d4f32b750f25800229f75";
 const HEAD = [
   `<title>${attr(TITLE)}</title>`,
   `<meta name="description" content="${attr(DESC)}">`,
@@ -120,6 +138,10 @@ const HEAD = [
   `<meta name="twitter:title" content="El caso ueno">`,
   `<meta name="twitter:description" content="${attr(OG_DESC)}">`,
   SITE && `<meta name="twitter:image" content="${OG_IMG}">`,
+  // Web Analytics de Cloudflare, puesto aquí y no inyectado por Cloudflare: al inyectarlo, Cloudflare reescribe la
+  // respuesta y le quita el ETag, y el navegador vuelve a bajar la página entera en cada visita. Solo va en index.html
+  // (artifact.html es un fragmento autónomo, y las páginas de /hecho/ llevan enseguida a esta)
+  `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${CF_BEACON_TOKEN}"}'></script>`,
   `<script type="application/ld+json">${JSON.stringify(ldDataset).replace(/</g, "\\u003c")}</script>`
 ].filter(Boolean).join("\n");
 
@@ -130,8 +152,9 @@ const html =
 fs.writeFileSync(path.join(root, "dist", "index.html"), html);
 // cabeceras de seguridad para Cloudflare (Workers con archivos estáticos lee dist/_headers).
 // La página solo carga archivos propios; el script en línea se autoriza por su hash, que se recalcula en cada build.
-// Cloudflare inyecta el script de Web Analytics, que se carga y envía datos a cloudflareinsights.com.
-const sha = s => `'sha256-${require("crypto").createHash("sha256").update(s).digest("base64")}'`;
+// El script de Web Analytics de Cloudflare (ver HEAD) se carga de static.cloudflareinsights.com y envía datos
+// a cloudflareinsights.com (o a /cdn-cgi/rum en este mismo sitio).
+const sha = s => `'sha256-${crypto.createHash("sha256").update(s).digest("base64")}'`;
 const scriptHashes = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => sha(m[1]));
 
 /* Una página chica por hecho, para compartirlo: /hecho/<id>. Tiene su propio título, descripción y tarjeta para redes
@@ -209,15 +232,26 @@ fs.writeFileSync(path.join(root, "dist", "_headers"), [
   "  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
   "  X-Frame-Options: DENY",
   "  Cross-Origin-Opener-Policy: same-origin",
+  // solo los archivos con nombre por contenido: si cambian, cambia su nombre, así que no hace falta volver a preguntar
+  "/assets/v/*",
+  "  Cache-Control: public, max-age=31536000, immutable",
+  // la portada ya trae el Web Analytics en su <head>; no-transform le dice a Cloudflare que no reescriba la respuesta
+  // para inyectarlo otra vez (la inyección automática es de toda la zona rickovelar.com, compartida con otros sitios,
+  // y no se puede apagar para un solo subdominio). Sin reescritura la respuesta conserva su ETag y revalida con 304.
+  // El resto es el Cache-Control que Cloudflare pone por defecto a los archivos estáticos.
+  "/",
+  "  Cache-Control: public, max-age=0, must-revalidate, no-transform",
   ""
 ].join("\n"));
 // al publicar dist/ en Cloudflare, el fragmento artifact.html no se sube (solo sirve para Artifacts)
 fs.writeFileSync(path.join(root, "dist", ".assetsignore"), "artifact.html\n");
-const assets = path.join(root, "site", "assets");
 if (fs.existsSync(assets)) {
-  fs.mkdirSync(path.join(root, "dist", "assets"), { recursive: true });
+  // se vacía antes de copiar, para que no se acumulen versiones viejas de los archivos con resumen en el nombre
+  fs.rmSync(path.join(root, "dist", "assets"), { recursive: true, force: true });
+  fs.mkdirSync(path.join(root, "dist", "assets", "v"), { recursive: true });
   for (const f of fs.readdirSync(assets)) {
-    if (/\.(jpe?g|png|webp|svg|ico|woff2?)$/i.test(f)) fs.copyFileSync(path.join(assets, f), path.join(root, "dist", "assets", f));
+    if (VERSIONED[f]) fs.copyFileSync(path.join(assets, f), path.join(root, "dist", VERSIONED[f]));
+    else if (/\.(jpe?g|png|svg|ico)$/i.test(f)) fs.copyFileSync(path.join(assets, f), path.join(root, "dist", "assets", f));
   }
   // los navegadores piden /favicon.ico en la raíz aunque la página no lo declare
   if (fs.existsSync(path.join(assets, "favicon.ico"))) fs.copyFileSync(path.join(assets, "favicon.ico"), path.join(root, "dist", "favicon.ico"));

@@ -26,7 +26,7 @@ scripts/
 .github/              formularios para aportes y validación automática
 ```
 
-`dist/` se genera con `npm run build` y no se versiona. Contiene `index.html` (documento completo, listo para cualquier hosting estático), `artifact.html` (la misma página como fragmento, para publicarla como Artifact), `assets/` (la textura de papel, con su crédito en `site/assets/CREDITS.md`) y `data.json`.
+`dist/` se genera con `npm run build` y no se versiona. Contiene `index.html` (documento completo, listo para cualquier hosting estático), `artifact.html` (la misma página como fragmento, para publicarla como Artifact), `assets/` (tipografías, textura de papel e íconos, con sus créditos en `site/assets/CREDITS.md`; las tipografías y la textura van en `assets/v/` con un resumen de su contenido en el nombre, para guardarse en caché por un año), `_headers` (cabeceras para Cloudflare) y `data.json`.
 
 ## Uso
 
