@@ -570,8 +570,9 @@ function SOCIAL(){
   return X_LINK() + (META.repo ? socialLink(META.repo, "Código y datos en GitHub", ICON_GH) : "");
 }
 function introHTML(enter){
+  const today = todayAsuncion();   // una sola vez: armar el formateador de fechas con zona horaria es de lo más lento del arranque
   return `<section class="intro${enter ? " enter" : ""}" id="inicio">
-    <div class="ed"><span>Edición especial</span><time datetime="${todayAsuncion()}"><span class="d-long">Asunción, ${esc(longDate(todayAsuncion()))}</span><span class="d-short">Asu, ${esc(shortDay(todayAsuncion()))}</span></time></div>
+    <div class="ed"><span>Edición especial</span><time datetime="${today}"><span class="d-long">Asunción, ${esc(longDate(today))}</span><span class="d-short">Asu, ${esc(shortDay(today))}</span></time></div>
     <h1><span class="mk">El caso ueno</span></h1>
     <p class="lede">Cronología visual de lo publicado por medios, legisladores y autoridades sobre ueno bank, desde sus orígenes hasta su resolución. <span class="by">Por Ricardo Ovelar.</span></p>
     <div class="intro-act">
@@ -704,20 +705,24 @@ function heroStrokes(delay){
 const PILE = {}, DREW = {};      // id → <article> de la pila; id → mazo con que se dibujó
 let PILES = [];                  // pilas visibles, en orden: lo que miden markYear, markFocus, settle y step
 const deckKey = id => (DECK[id] || []).join(",");
-let YR = [];
-function buildRail(){
-  const groups = [];
-  for (const e of EVENTS) { const y = e.p.slice(0, 4); if (!groups.length || groups[groups.length - 1].y !== y) groups.push({ y, items: [] }); groups[groups.length - 1].items.push(e); }
-  rail.innerHTML = introHTML(true) + groups.map(g => `<section class="yr" id="y-${g.y}" aria-label="${g.y}"><div class="year"><span class="yl"><small>${g.items.length} ${g.items.length === 1 ? "hecho" : "hechos"}</small><b>${g.y}</b></span></div><div class="yrow">${g.items.map(pileHTML).join("")}</div></section>`).join("") +
-    `<p class="empty" hidden>Ningún hecho coincide con los filtros. <button type="button" data-reset>Ver todo</button></p>`;
-  for (const e of EVENTS) { PILE[e.id] = document.getElementById("e-" + e.id); DREW[e.id] = deckKey(e.id); }
-  YR = groups.map(g => ({ y: g.y, el: document.getElementById("y-" + g.y), n: g.items.length }));
+let YR = [];                     // años, con su <section>; vacío mientras las pilas no estén armadas
+// la portada va primero y sola: es liviana, y así el primer cuadro no espera a las pilas (ver el arranque)
+function buildIntro(){
+  rail.innerHTML = introHTML(true) + `<p class="empty" hidden>Ningún hecho coincide con los filtros. <button type="button" data-reset>Ver todo</button></p>`;
   heroStrokes(520);
-  observeStacks(rail);
   // la portada se arma una sola vez: terminada la entrada se quita la clase, para que sus animaciones (que se quedan
   // en su estado final) no sigan vivas
-  const intro = rail.querySelector(".intro");
+  const intro = rail.firstElementChild;
   intro.addEventListener("animationend", ev => { if (ev.target === intro.lastElementChild) intro.classList.remove("enter"); });
+}
+function buildRail(){
+  if (!rail.firstElementChild) buildIntro();
+  const groups = [];
+  for (const e of EVENTS) { const y = e.p.slice(0, 4); if (!groups.length || groups[groups.length - 1].y !== y) groups.push({ y, items: [] }); groups[groups.length - 1].items.push(e); }
+  rail.firstElementChild.insertAdjacentHTML("afterend", groups.map(g => `<section class="yr" id="y-${g.y}" aria-label="${g.y}"><div class="year"><span class="yl"><small>${g.items.length} ${g.items.length === 1 ? "hecho" : "hechos"}</small><b>${g.y}</b></span></div><div class="yrow">${g.items.map(pileHTML).join("")}</div></section>`).join(""));
+  for (const e of EVENTS) { PILE[e.id] = document.getElementById("e-" + e.id); DREW[e.id] = deckKey(e.id); }
+  YR = groups.map(g => ({ y: g.y, el: document.getElementById("y-" + g.y), n: g.items.length }));
+  observeStacks(rail);
 }
 // rehace el contenido de una pila en su lugar: el elemento se conserva, con su estado de dibujo (content-visibility) y su tamaño
 function fillPile(el, e){
@@ -732,26 +737,12 @@ function fillPile(el, e){
   observeStacks(el);
 }
 let qTimer = 0;
-function render(){
-  clearTimeout(qTimer);
-  const list = visible();
-  frontForQuery(list);
-  if (!rail.firstElementChild) buildRail();
+// todo lo que no son las pilas: línea de tiempo, contador y controles. Devuelve los ids de los hechos visibles
+function controls(list){
   // los hechos filtrados quedan como marcas tenues; los años sin hechos visibles no se pueden elegir
   VIS = list;
   const shown = new Set(list.map(e => e.id));
-  for (const e of EVENTS) {
-    const on = shown.has(e.id), el = PILE[e.id];
-    TICK[e.id].classList.toggle("off", !on);
-    if (el.hidden === on) el.hidden = !on;
-    if (on && DREW[e.id] !== deckKey(e.id)) fillPile(el, e);
-  }
-  PILES = list.map(e => PILE[e.id]);
-  for (const g of YR) {
-    const n = list.reduce((k, e) => k + (e.p.startsWith(g.y) ? 1 : 0), 0);
-    if (g.el.hidden === !!n) g.el.hidden = !n;
-    if (n && n !== g.n) { g.n = n; g.el.querySelector(".yl small").textContent = `${n} ${n === 1 ? "hecho" : "hechos"}`; }
-  }
+  for (const e of EVENTS) TICK[e.id].classList.toggle("off", !shown.has(e.id));
   rail.querySelector(".empty").hidden = !!list.length;
   tl.hidden = !list.length;
   if (!tl.hidden) fitYears();
@@ -764,6 +755,25 @@ function render(){
   $("sheet-go").textContent = `Ver ${list.length} ${list.length === 1 ? "hecho" : "hechos"}`;
   $("th").value = state.th; $("tp").value = state.tp; if ($("q").value !== state.q) $("q").value = state.q;
   $("hitos").setAttribute("aria-pressed", state.key);
+  return shown;
+}
+function render(){
+  clearTimeout(qTimer);
+  const list = visible();
+  frontForQuery(list);
+  if (!YR.length) buildRail();
+  const shown = controls(list);
+  for (const e of EVENTS) {
+    const on = shown.has(e.id), el = PILE[e.id];
+    if (el.hidden === on) el.hidden = !on;
+    if (on && DREW[e.id] !== deckKey(e.id)) fillPile(el, e);
+  }
+  PILES = list.map(e => PILE[e.id]);
+  for (const g of YR) {
+    const n = list.reduce((k, e) => k + (e.p.startsWith(g.y) ? 1 : 0), 0);
+    if (g.el.hidden === !!n) g.el.hidden = !n;
+    if (n && n !== g.n) { g.n = n; g.el.querySelector(".yl small").textContent = `${n} ${n === 1 ? "hecho" : "hechos"}`; }
+  }
   requestAnimationFrame(markYear);
 }
 function setFilter(patch){
@@ -947,6 +957,7 @@ function updateTimeline(pos, e){
   for (const b of tlYears.children) b.dataset.span.split(" ").includes(year) ? b.setAttribute("aria-current", "true") : b.removeAttribute("aria-current");
 }
 function goTo(e, smooth){
+  start();   // por si se toca la línea de tiempo antes de que estén las pilas (ver el arranque)
   document.getElementById("e-" + e.id)?.scrollIntoView({ behavior: smooth && !reduced.matches ? "smooth" : "auto", inline: "center", block: desktop.matches ? "nearest" : "center" });
 }
 // el hecho visible más cercano a un punto del eje
@@ -1060,6 +1071,7 @@ tlTrack.addEventListener("keydown", ev => {
 tlYears.addEventListener("click", ev => {
   const button = ev.target.closest("[data-year]");
   if (!button || button.disabled) return;
+  start();
   const year = button.dataset.span.split(" ").find(y => VIS.some(x => x.p.startsWith(y)));
   // en el celular las pilas lejanas todavía no tienen su alto real y un desplazamiento suave termina corto:
   // se salta directo al primer hecho del año y se llega con el mismo deslizamiento que la línea de tiempo
@@ -1360,19 +1372,37 @@ document.fonts?.ready.then(() => {
   for (const s of document.querySelectorAll(".filters select")) { s.style.display = "none"; void s.offsetWidth; s.style.display = ""; }
 });
 
-/* ---------- arranque ---------- */
-render();
-markYear();
-{
+/* ---------- arranque ----------
+   En dos pasos: primero la portada, la línea de tiempo y la barra, que se pintan enseguida; las pilas (casi 17.000
+   elementos, medio segundo en un celular lento) se arman recién después de ese primer cuadro. Se arma todo de una vez
+   cuando no hay nada que pintar antes o la página tiene que llegar ya completa: un enlace a un hecho (#e-…), que va
+   derecho a su pila; una recarga o una vuelta atrás, donde el navegador repone el desplazamiento; una pestaña de fondo. */
+let started = false;
+function start(){
+  if (started) return;
+  started = true;
+  render();
+  markYear();
   const h = location.hash.replace(/^#/, "");
   if (h.startsWith("e-")) {
     const go = () => document.getElementById(h)?.scrollIntoView({ inline: "center", block: "center" });
     go(); requestAnimationFrame(() => requestAnimationFrame(go)); setTimeout(go, 400);
   }
 }
+if (location.hash.startsWith("#e-") || document.hidden || performance.getEntriesByType("navigation")[0]?.type !== "navigate") start();
+else {
+  buildIntro();
+  const list = visible();
+  controls(list);
+  if (list.length) updateTimeline(list[0]._x, list[0]);
+  // requestAnimationFrame corre antes de pintar el cuadro y el setTimeout de adentro, después. El otro setTimeout es
+  // por si el cuadro no llega (la pestaña pasó al fondo); si antes se usa un filtro, render() arma las pilas ahí mismo
+  requestAnimationFrame(() => setTimeout(start, 0));
+  setTimeout(start, 1500);
+}
 window.addEventListener("hashchange", () => {
   const h = location.hash.replace(/^#/, "");
   if (h.startsWith("tema-") && TOPICS[h.slice(5)] && state.tp !== h.slice(5)) setFilter({ tp: h.slice(5) });
-  else if (h.startsWith("e-")) document.getElementById(h)?.scrollIntoView({ behavior: "smooth", inline: "center", block: "center" });
+  else if (h.startsWith("e-")) { start(); document.getElementById(h)?.scrollIntoView({ behavior: "smooth", inline: "center", block: "center" }); }
 });
 </script>
