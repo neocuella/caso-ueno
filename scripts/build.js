@@ -113,7 +113,6 @@ const ldDataset = {
   dateModified: META.updated,
   distribution: [{ "@type": "DataDownload", encodingFormat: "application/json", contentUrl: `${SITE}/data.json` }]
 };
-const CF_BEACON_TOKEN = "e866f8fb5d1d4f32b750f25800229f75";
 const HEAD = [
   `<title>${attr(TITLE)}</title>`,
   `<meta name="description" content="${attr(DESC)}">`,
@@ -138,10 +137,6 @@ const HEAD = [
   `<meta name="twitter:title" content="El caso ueno">`,
   `<meta name="twitter:description" content="${attr(OG_DESC)}">`,
   SITE && `<meta name="twitter:image" content="${OG_IMG}">`,
-  // Web Analytics de Cloudflare, puesto aquí y no inyectado por Cloudflare: al inyectarlo, Cloudflare reescribe la
-  // respuesta y le quita el ETag, y el navegador vuelve a bajar la página entera en cada visita. Solo va en index.html
-  // (artifact.html es un fragmento autónomo, y las páginas de /hecho/ llevan enseguida a esta)
-  `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${CF_BEACON_TOKEN}"}'></script>`,
   `<script type="application/ld+json">${JSON.stringify(ldDataset).replace(/</g, "\\u003c")}</script>`
 ].filter(Boolean).join("\n");
 
@@ -152,8 +147,10 @@ const html =
 fs.writeFileSync(path.join(root, "dist", "index.html"), html);
 // cabeceras de seguridad para Cloudflare (Workers con archivos estáticos lee dist/_headers).
 // La página solo carga archivos propios; el script en línea se autoriza por su hash, que se recalcula en cada build.
-// El script de Web Analytics de Cloudflare (ver HEAD) se carga de static.cloudflareinsights.com y envía datos
-// a cloudflareinsights.com (o a /cdn-cgi/rum en este mismo sitio).
+// Cloudflare inyecta el script de Web Analytics, que se carga de static.cloudflareinsights.com y envía datos a
+// cloudflareinsights.com. La inyección es de toda la zona rickovelar.com y reescribe la respuesta, así que la portada
+// sale sin ETag y no revalida con 304. No ponerlo a mano en el <head> (Cloudflare lo inyecta igual y queda dos veces)
+// ni frenar la inyección con Cache-Control: no-transform (Cloudflare tampoco comprime: ~175 kB pasan a 671 kB).
 const sha = s => `'sha256-${crypto.createHash("sha256").update(s).digest("base64")}'`;
 const scriptHashes = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => sha(m[1]));
 
@@ -235,8 +232,6 @@ fs.writeFileSync(path.join(root, "dist", "_headers"), [
   // solo los archivos con nombre por contenido: si cambian, cambia su nombre, así que no hace falta volver a preguntar
   "/assets/v/*",
   "  Cache-Control: public, max-age=31536000, immutable",
-  // (no usar Cache-Control: no-transform en la portada para frenar la inyección del Web Analytics: Cloudflare tampoco
-  // comprime la respuesta y la página pasa de ~175 kB a 671 kB en la primera visita)
   ""
 ].join("\n"));
 // al publicar dist/ en Cloudflare, el fragmento artifact.html no se sube (solo sirve para Artifacts)
