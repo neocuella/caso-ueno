@@ -1257,8 +1257,9 @@ function scheduleFocus(){
   }, 120);
 }
 function settle(v0){
-  // al frenar, la pila más cercana al centro se acomoda con un resorte: pasa apenas de largo y rebota
-  const mid = rail.scrollLeft + rail.clientWidth / 2;
+  // al frenar, la pila más cercana al centro se acomoda con un resorte: pasa apenas de largo y rebota. El centro es el
+  // mismo que usa el foco (ver endShift): al final de la fila, la última pila se elige y la fila llega hasta el borde
+  const mid = rail.scrollLeft + rail.clientWidth / 2 + endShift(rail.clientWidth / 2);
   let best = null, dist = Infinity;
   for (const el of PILES) { const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid); if (d < dist) { dist = d; best = el; } }
   const done = () => { glideRaf = 0; setTilt(0, true); rail.classList.remove("dragging"); scheduleFocus(); };
