@@ -1369,13 +1369,28 @@ document.addEventListener("keydown", ev => {
 
 /* ---------- la aguja sigue el centro de la pantalla: entre dos pilas, interpola entre sus fechas ---------- */
 let yrRaf = 0;
+/* La última pila no llega al centro de la pantalla: al final de la fila no queda lugar para correrla más. Para que igual
+   quede en foco, en el último tramo el punto que se toma como centro (m: a cuántos px del borde de la ventana) se va
+   corriendo hacia ella: arranca en el centro cuando falta, por desplazar, lo mismo que le falta a la pila para llegar al
+   centro (o desde el principio, si la fila se desplaza menos que eso) y al terminar de desplazar queda sobre la pila. Si la
+   fila no se desplaza, no se corre: queda en foco la pila más cercana al centro. Devuelve cuánto se corre */
+function endShift(m){
+  const last = PILES[PILES.length - 1];
+  if (!last) return 0;
+  const H = desktop.matches, r = last.getBoundingClientRect();
+  const max = H ? rail.scrollWidth - rail.clientWidth : document.documentElement.scrollHeight - innerHeight;
+  const rest = Math.max(0, max - (H ? rail.scrollLeft : scrollY));
+  const gap = (H ? r.left + r.width / 2 : r.top + r.height / 2) - rest - m;   // lo que le faltará a la pila al final
+  const ramp = Math.min(gap, max);
+  return ramp > 0 ? gap * Math.max(0, 1 - rest / ramp) : 0;
+}
 function markYear(){
   yrRaf = 0;
   const piles = PILES;            // lista de render(): no se vuelve a buscar en cada cuadro
   // mientras se arrastra sobre la barra, la aguja la maneja el arrastre, no el desplazamiento de la fila
   if (piles.length && !scrub) {
     const horiz = desktop.matches;
-    const mid = horiz ? rail.scrollLeft + rail.clientWidth / 2 : window.scrollY + window.innerHeight / 2;
+    const mid = horiz ? rail.scrollLeft + rail.clientWidth / 2 + endShift(rail.clientWidth / 2) : window.scrollY + window.innerHeight / 2 + endShift(window.innerHeight / 2);
     const c = el => horiz ? el.offsetLeft + el.offsetWidth / 2 : el.offsetTop + el.offsetHeight / 2;
     let lo = 0, hi = piles.length;             // primera pila cuyo centro pasó el medio (están en orden)
     while (lo < hi) { const m = (lo + hi) >> 1; if (c(piles[m]) <= mid) lo = m + 1; else hi = m; }
@@ -1388,7 +1403,8 @@ function markYear(){
 }
 /* la pila más cercana al centro de la pantalla queda "en foco": su titular se resalta */
 function markFocus(){
-  const cx = innerWidth / 2, cy = (innerHeight - 80) / 2;
+  let cx = innerWidth / 2, cy = (innerHeight - 80) / 2;
+  if (desktop.matches) cx += endShift(cx); else cy += endShift(cy);
   let best = null, dist = Infinity;
   for (const p of PILES) {
     const r = p.getBoundingClientRect();
