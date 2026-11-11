@@ -194,6 +194,26 @@ i.tex{position:absolute;inset:0;pointer-events:none;background:linear-gradient(t
 .about-open{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;height:40px;padding:0 16px;border:1.5px solid var(--ink);font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;transition:background .15s ease,color .15s ease}
 .about-open:hover{background:var(--ink);color:#FFFFFF}
 .about-open:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+/* compartir la página: mismo botón que "Sobre este proyecto"; en la computadora abre un menú de redes, en el celular
+   el menú de compartir del sistema. En pantallas angostas queda solo el ícono (la etiqueta sigue para los lectores) */
+.intro-btns{display:flex;align-items:center;gap:8px}
+.site-share{position:relative;display:flex}
+.share-open{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border:1.5px solid var(--ink);font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;transition:background .15s ease,color .15s ease}
+.share-open svg{width:17px;height:17px;flex:none}
+.share-open:hover,.share-open[aria-expanded="true"]{background:var(--ink);color:#FFFFFF}
+.share-open:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+@media (max-width:560px){
+  .share-open{width:40px;padding:0;justify-content:center}
+  .share-open .lbl{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+}
+.share-menu{position:absolute;z-index:5;top:calc(100% + 6px);left:0;min-width:200px;display:flex;flex-direction:column;padding:6px 0;background:#FFFFFF;border:1.5px solid var(--ink);box-shadow:0 10px 24px rgba(20,20,19,.14)}
+.share-menu[hidden]{display:none}
+@media (max-width:560px){ .share-menu{left:auto;right:0} }
+.share-menu a,.share-menu button{all:unset;box-sizing:border-box;display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:9px 14px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;text-decoration:none}
+.share-menu a:hover,.share-menu button:hover,.share-menu a:focus-visible,.share-menu button:focus-visible{background:#F3F4F6}
+.share-menu a:focus-visible,.share-menu button:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+.share-menu .ext{color:var(--muted)}
+.share-menu button{border-top:1px solid var(--line);margin-top:4px;padding-top:11px}
 .stats{display:flex;gap:22px;flex-wrap:wrap;font-size:12px;color:var(--muted);border-top:1px solid var(--ink);padding-top:10px}
 .stats b{display:block;font-family:var(--f-serif);font-size:28px;font-weight:700;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
 .hint{margin-top:22px;font-size:13px;font-weight:600;color:var(--ink)}
@@ -576,7 +596,8 @@ function introHTML(enter){
     <h1><span class="mk">El caso ueno</span></h1>
     <p class="lede">Cronología visual de lo publicado por medios, legisladores y autoridades sobre ueno bank, desde sus orígenes hasta su resolución. <span class="by">Por Ricardo Ovelar.</span></p>
     <div class="intro-act">
-      <button class="about-open" type="button" data-about aria-haspopup="dialog">Sobre este proyecto</button>
+      <span class="intro-btns"><button class="about-open" type="button" data-about aria-haspopup="dialog">Sobre este proyecto</button>
+        <span class="site-share"><button class="share-open" type="button" data-share-site aria-expanded="false" title="Compartir esta página">${SHARE_ICON}<span class="lbl">Compartir</span></button></span></span>
       <span class="social">${SOCIAL()}</span>
     </div>
     <div class="stats"><span><b>${EVENTS.length}</b>hechos</span><span><b>${NSRC}</b>fuentes</span><span><b>${OUTLETS.size}</b>medios y emisores</span></div>
@@ -898,8 +919,65 @@ function shareEvent(id, btn){
     clearTimeout(btn._t); btn._t = setTimeout(() => btn.classList.remove("ok"), 1600);
   }, () => { window.prompt("Copiá el enlace a este hecho:", url); });
 }
+/* compartir la página entera, desde la portada. En el celular, el menú de compartir del sistema; en la computadora, un
+   menú con enlaces a las redes (sin scripts de terceros: cada red tiene su dirección para compartir) y "Copiar enlace".
+   El menú se arma la primera vez que se abre */
+const SITE_TEXT = "El caso ueno: cronología visual de lo publicado sobre ueno bank, desde sus orígenes hasta su resolución.";
+let shareMenu = null;
+function siteURL(){ return (META.site || location.origin) + "/"; }
+function shareSite(btn){
+  const url = siteURL();
+  if (navigator.share && matchMedia("(pointer: coarse)").matches) { navigator.share({ title: "El caso ueno", text: SITE_TEXT, url }).catch(() => {}); return; }
+  if (shareMenu && !shareMenu.hidden) { closeShareMenu(true); return; }
+  if (!shareMenu) {
+    const u = encodeURIComponent(url), t = encodeURIComponent(SITE_TEXT);
+    const out = (href, label) => `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${label}<span class="ext" aria-hidden="true">↗</span><span class="sr">(se abre en una ventana nueva)</span></a>`;
+    shareMenu = document.createElement("div");
+    shareMenu.className = "share-menu"; shareMenu.id = "share-menu"; shareMenu.hidden = true;
+    shareMenu.setAttribute("role", "group"); shareMenu.setAttribute("aria-label", "Compartir esta página");
+    shareMenu.innerHTML = out(`https://wa.me/?text=${encodeURIComponent(SITE_TEXT + " " + url)}`, "WhatsApp")
+      + out(`https://x.com/intent/post?text=${t}&url=${u}&via=${X_HANDLE}`, "X")
+      + out(`https://www.facebook.com/sharer/sharer.php?u=${u}`, "Facebook")
+      + out(`https://t.me/share/url?url=${u}&text=${t}`, "Telegram")
+      + `<button type="button" data-copy-site>Copiar enlace</button>`;
+    btn.after(shareMenu);
+    btn.setAttribute("aria-controls", "share-menu");
+    shareMenu.addEventListener("click", ev => {
+      if (ev.target.closest("a")) { closeShareMenu(false); return; }
+      const c = ev.target.closest("[data-copy-site]");
+      if (!c) return;
+      copyText(url).then(() => {
+        c.textContent = "Enlace copiado"; say("Enlace copiado");
+        setTimeout(() => { closeShareMenu(true); c.textContent = "Copiar enlace"; }, 900);
+      }, () => { closeShareMenu(true); window.prompt("Copiá el enlace:", url); });
+    });
+    shareMenu.addEventListener("keydown", ev => {
+      if (ev.key === "Escape") { closeShareMenu(true); ev.preventDefault(); ev.stopPropagation(); return; }
+      // flechas para moverse entre las opciones
+      if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") return;
+      const items = [...shareMenu.querySelectorAll("a,button")], i = items.indexOf(document.activeElement);
+      items[(i + (ev.key === "ArrowDown" ? 1 : items.length - 1)) % items.length].focus(); ev.preventDefault();
+    });
+  }
+  shareMenu.hidden = false; btn.setAttribute("aria-expanded", "true");
+  shareMenu.querySelector("a").focus({ preventScroll: true });
+  document.addEventListener("pointerdown", outsideShare, true);
+  document.addEventListener("focusin", outsideShare);
+}
+function outsideShare(ev){ if (!ev.target.closest(".site-share")) closeShareMenu(false); }
+function closeShareMenu(refocus){
+  if (!shareMenu || shareMenu.hidden) return;
+  shareMenu.hidden = true;
+  const btn = shareMenu.previousElementSibling;
+  btn.setAttribute("aria-expanded", "false");
+  if (refocus) btn.focus({ preventScroll: true });
+  document.removeEventListener("pointerdown", outsideShare, true);
+  document.removeEventListener("focusin", outsideShare);
+}
 rail.addEventListener("click", ev => {
   if (ev.target.closest("[data-about]")) { about.showModal(); return; }
+  const ss = ev.target.closest("[data-share-site]");
+  if (ss) { shareSite(ss); return; }
   const pile = ev.target.closest(".pile");
   const pick = ev.target.closest("[data-pick]");
   // elegir un diario de atrás lo trae al frente y manda el de adelante al fondo; las flechas rotan el mazo
