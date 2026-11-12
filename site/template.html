@@ -214,6 +214,11 @@ i.tex{position:absolute;inset:0;pointer-events:none;background:linear-gradient(t
 .share-menu a:focus-visible,.share-menu button:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 .share-menu .ext{color:var(--muted)}
 .share-menu button{border-top:1px solid var(--line);margin-top:4px;padding-top:11px}
+.outro h2{margin:0 0 16px;font-family:var(--f-serif);font-weight:800;font-size:clamp(36px,6vw,48px);line-height:1;letter-spacing:-.025em;border-bottom:1px solid var(--ink);padding-bottom:14px}
+.outro .intro-act{margin-bottom:0}
+.to-start{all:unset;display:inline-block;margin-top:22px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
+.to-start:hover{text-decoration:underline}
+.to-start:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .stats{display:flex;gap:22px;flex-wrap:wrap;font-size:12px;color:var(--muted);border-top:1px solid var(--ink);padding-top:10px}
 .stats b{display:block;font-family:var(--f-serif);font-size:28px;font-weight:700;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
 .hint{margin-top:22px;font-size:13px;font-weight:600;color:var(--ink)}
@@ -382,6 +387,9 @@ html:has(.about[open]){overflow:hidden}
   /* años: un eje punteado arriba, con el año fijo mientras se recorre su grupo */
   .rail{gap:0;align-items:stretch;padding-top:calc(88px + env(safe-area-inset-top,0px))}
   .intro{align-self:center;margin-right:96px;width:460px}
+  /* el cierre deja lugar a la derecha para que la última pila llegue al centro de la pantalla: la mitad de la pila (260),
+     el margen de su fila (88), el cierre (460) y el margen de la fila (64) suman 872; en pantallas más anchas se agrega lo que falta */
+  .outro{margin-right:0;box-sizing:content-box;padding-right:max(0px,calc(50vw - 872px));scroll-snap-align:end}
   .empty{align-self:center;margin-left:40px;width:440px}
   .yr{display:flex;flex-direction:column;flex:none}
   .yrow{display:flex;align-items:center;gap:88px;flex:1;min-height:0;padding:0 88px 0 24px}
@@ -595,13 +603,29 @@ function introHTML(enter){
     <div class="ed"><span>Edición especial</span><time datetime="${today}"><span class="d-long">Asunción, ${esc(longDate(today))}</span><span class="d-short">Asu, ${esc(shortDay(today))}</span></time></div>
     <h1><span class="mk">El caso ueno</span></h1>
     <p class="lede">Cronología visual de lo publicado por medios, legisladores y autoridades sobre ueno bank, desde sus orígenes hasta su resolución. <span class="by">Por Ricardo Ovelar.</span></p>
-    <div class="intro-act">
+    ${introActs()}
+    <div class="stats"><span><b>${EVENTS.length}</b>hechos</span><span><b>${NSRC}</b>fuentes</span><span><b>${OUTLETS.size}</b>medios y emisores</span></div>
+    <div class="hint"><span class="h">Arrastrá o deslizá hacia el costado →</span><span class="v">Deslizá hacia abajo ↓</span></div>
+  </section>`;
+}
+// "Sobre este proyecto", compartir y redes: en la portada y en el cierre
+function introActs(){
+  return `<div class="intro-act">
       <span class="intro-btns"><button class="about-open" type="button" data-about aria-haspopup="dialog">Sobre este proyecto</button>
         <span class="site-share"><button class="share-open" type="button" data-share-site aria-expanded="false" title="Compartir esta página">${SHARE_ICON}<span class="lbl">Compartir</span></button></span></span>
       <span class="social">${SOCIAL()}</span>
-    </div>
-    <div class="stats"><span><b>${EVENTS.length}</b>hechos</span><span><b>${NSRC}</b>fuentes</span><span><b>${OUTLETS.size}</b>medios y emisores</span></div>
-    <div class="hint"><span class="h">Arrastrá o deslizá hacia el costado →</span><span class="v">Deslizá hacia abajo ↓</span></div>
+    </div>`;
+}
+/* cierre, después de la última pila: la fecha de actualización, compartir, el proyecto y la vuelta al principio.
+   En la computadora además deja lugar para que las últimas pilas lleguen al centro de la pantalla, como las demás */
+function outroHTML(){
+  const d = META.updated;
+  return `<section class="intro outro" id="fin" aria-label="Fin de la cronología">
+    <div class="ed"><span>Fin de la cronología</span><time datetime="${d}"><span class="d-long">Al ${esc(longDate(d))}</span><span class="d-short">Al ${esc(shortDay(d))}</span></time></div>
+    <h2>Hasta acá, por ahora.</h2>
+    <p class="lede">${EVENTS.length} hechos contados por ${OUTLETS.size} medios y emisores en ${NSRC} publicaciones. La cronología se actualiza a medida que aparecen novedades del caso.</p>
+    ${introActs()}
+    <button type="button" class="hint to-start" data-to-start><span class="h">← Volver al principio</span><span class="v">↑ Volver al principio</span></button>
   </section>`;
 }
 /* "Sobre este proyecto": cómo leer la página y los datos abiertos, en un diálogo que se abre desde la portada */
@@ -743,6 +767,7 @@ function buildRail(){
   rail.firstElementChild.insertAdjacentHTML("afterend", groups.map(g => `<section class="yr" id="y-${g.y}" aria-label="${g.y}"><div class="year"><span class="yl"><small>${g.items.length} ${g.items.length === 1 ? "hecho" : "hechos"}</small><b>${g.y}</b></span></div><div class="yrow">${g.items.map(pileHTML).join("")}</div></section>`).join(""));
   for (const e of EVENTS) { PILE[e.id] = document.getElementById("e-" + e.id); DREW[e.id] = deckKey(e.id); }
   YR = groups.map(g => ({ y: g.y, el: document.getElementById("y-" + g.y), n: g.items.length }));
+  rail.insertAdjacentHTML("beforeend", outroHTML());
   observeStacks(rail);
 }
 // rehace el contenido de una pila en su lugar: el elemento se conserva, con su estado de dibujo (content-visibility) y su tamaño
@@ -928,7 +953,8 @@ function siteURL(){ return (META.site || location.origin) + "/"; }
 function shareSite(btn){
   const url = siteURL();
   if (navigator.share && matchMedia("(pointer: coarse)").matches) { navigator.share({ title: "El caso ueno", text: SITE_TEXT, url }).catch(() => {}); return; }
-  if (shareMenu && !shareMenu.hidden) { closeShareMenu(true); return; }
+  // el menú es uno solo y va junto al botón que se tocó (el de la portada o el del cierre)
+  if (shareMenu && !shareMenu.hidden) { const same = shareMenu.previousElementSibling === btn; closeShareMenu(same); if (same) return; }
   if (!shareMenu) {
     const u = encodeURIComponent(url), t = encodeURIComponent(SITE_TEXT);
     const out = (href, label) => `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${label}<span class="ext" aria-hidden="true">↗</span><span class="sr">(se abre en una ventana nueva)</span></a>`;
@@ -940,8 +966,6 @@ function shareSite(btn){
       + out(`https://www.facebook.com/sharer/sharer.php?u=${u}`, "Facebook")
       + out(`https://t.me/share/url?url=${u}&text=${t}`, "Telegram")
       + `<button type="button" data-copy-site>Copiar enlace</button>`;
-    btn.after(shareMenu);
-    btn.setAttribute("aria-controls", "share-menu");
     shareMenu.addEventListener("click", ev => {
       if (ev.target.closest("a")) { closeShareMenu(false); return; }
       const c = ev.target.closest("[data-copy-site]");
@@ -959,6 +983,8 @@ function shareSite(btn){
       items[(i + (ev.key === "ArrowDown" ? 1 : items.length - 1)) % items.length].focus(); ev.preventDefault();
     });
   }
+  if (shareMenu.previousElementSibling !== btn) btn.after(shareMenu);
+  btn.setAttribute("aria-controls", "share-menu");
   shareMenu.hidden = false; btn.setAttribute("aria-expanded", "true");
   shareMenu.querySelector("a").focus({ preventScroll: true });
   document.addEventListener("pointerdown", outsideShare, true);
@@ -978,6 +1004,7 @@ rail.addEventListener("click", ev => {
   if (ev.target.closest("[data-about]")) { about.showModal(); return; }
   const ss = ev.target.closest("[data-share-site]");
   if (ss) { shareSite(ss); return; }
+  if (ev.target.closest("[data-to-start]")) { rail.scrollLeft = 0; window.scrollTo(0, 0); rail.querySelector(".about-open")?.focus({ preventScroll: true }); return; }
   const pile = ev.target.closest(".pile");
   const pick = ev.target.closest("[data-pick]");
   // elegir un diario de atrás lo trae al frente y manda el de adelante al fondo; las flechas rotan el mazo
@@ -1257,14 +1284,17 @@ function scheduleFocus(){
   }, 120);
 }
 function settle(v0){
-  // al frenar, la pila más cercana al centro se acomoda con un resorte: pasa apenas de largo y rebota. El centro es el
-  // mismo que usa el foco (ver endShift): al final de la fila, la última pila se elige y la fila llega hasta el borde
-  const mid = rail.scrollLeft + rail.clientWidth / 2 + endShift(rail.clientWidth / 2);
+  // al frenar, la pila más cercana al centro se acomoda con un resorte: pasa apenas de largo y rebota
+  // (también la última: el cierre deja lugar para que llegue al centro)
+  const mid = rail.scrollLeft + rail.clientWidth / 2;
   let best = null, dist = Infinity;
   for (const el of PILES) { const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid); if (d < dist) { dist = d; best = el; } }
   const done = () => { glideRaf = 0; setTilt(0, true); rail.classList.remove("dragging"); scheduleFocus(); };
   if (!best || dist > rail.clientWidth * .3 || rail.scrollLeft <= 40) { done(); return; }
-  const target = Math.max(0, Math.min(rail.scrollWidth - rail.clientWidth, best.offsetLeft + best.offsetWidth / 2 - rail.clientWidth / 2));
+  const max = rail.scrollWidth - rail.clientWidth;
+  let target = Math.max(0, Math.min(max, best.offsetLeft + best.offsetWidth / 2 - rail.clientWidth / 2));
+  // pasando la última pila, el final de la fila (el cierre entero a la vista) es el otro lugar donde quedarse: el más cercano
+  if (max - rail.scrollLeft < Math.abs(rail.scrollLeft - target)) target = max;
   if (reduced.matches) { rail.scrollLeft = target; done(); return; }
   const K = 160, C = 2 * .52 * Math.sqrt(K);          // rigidez y amortiguación (ζ≈0,52: un rebote suave)
   let x = rail.scrollLeft, v = (v0 || 0) * 1000, last = performance.now();  // v en px/s
@@ -1370,28 +1400,13 @@ document.addEventListener("keydown", ev => {
 
 /* ---------- la aguja sigue el centro de la pantalla: entre dos pilas, interpola entre sus fechas ---------- */
 let yrRaf = 0;
-/* La última pila no llega al centro de la pantalla: al final de la fila no queda lugar para correrla más. Para que igual
-   quede en foco, en el último tramo el punto que se toma como centro (m: a cuántos px del borde de la ventana) se va
-   corriendo hacia ella: arranca en el centro cuando falta, por desplazar, lo mismo que le falta a la pila para llegar al
-   centro (o desde el principio, si la fila se desplaza menos que eso) y al terminar de desplazar queda sobre la pila. Si la
-   fila no se desplaza, no se corre: queda en foco la pila más cercana al centro. Devuelve cuánto se corre */
-function endShift(m){
-  const last = PILES[PILES.length - 1];
-  if (!last) return 0;
-  const H = desktop.matches, r = last.getBoundingClientRect();
-  const max = H ? rail.scrollWidth - rail.clientWidth : document.documentElement.scrollHeight - innerHeight;
-  const rest = Math.max(0, max - (H ? rail.scrollLeft : scrollY));
-  const gap = (H ? r.left + r.width / 2 : r.top + r.height / 2) - rest - m;   // lo que le faltará a la pila al final
-  const ramp = Math.min(gap, max);
-  return ramp > 0 ? gap * Math.max(0, 1 - rest / ramp) : 0;
-}
 function markYear(){
   yrRaf = 0;
   const piles = PILES;            // lista de render(): no se vuelve a buscar en cada cuadro
   // mientras se arrastra sobre la barra, la aguja la maneja el arrastre, no el desplazamiento de la fila
   if (piles.length && !scrub) {
     const horiz = desktop.matches;
-    const mid = horiz ? rail.scrollLeft + rail.clientWidth / 2 + endShift(rail.clientWidth / 2) : window.scrollY + window.innerHeight / 2 + endShift(window.innerHeight / 2);
+    const mid = horiz ? rail.scrollLeft + rail.clientWidth / 2 : window.scrollY + window.innerHeight / 2;
     const c = el => horiz ? el.offsetLeft + el.offsetWidth / 2 : el.offsetTop + el.offsetHeight / 2;
     let lo = 0, hi = piles.length;             // primera pila cuyo centro pasó el medio (están en orden)
     while (lo < hi) { const m = (lo + hi) >> 1; if (c(piles[m]) <= mid) lo = m + 1; else hi = m; }
@@ -1404,8 +1419,7 @@ function markYear(){
 }
 /* la pila más cercana al centro de la pantalla queda "en foco": su titular se resalta */
 function markFocus(){
-  let cx = innerWidth / 2, cy = (innerHeight - 80) / 2;
-  if (desktop.matches) cx += endShift(cx); else cy += endShift(cy);
+  const cx = innerWidth / 2, cy = (innerHeight - 80) / 2;
   let best = null, dist = Infinity;
   for (const p of PILES) {
     const r = p.getBoundingClientRect();
